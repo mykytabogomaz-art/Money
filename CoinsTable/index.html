@@ -104,8 +104,8 @@
             { type: 'pence', value: 10, name: '10p', image: '10p.png' },
             { type: 'pence', value: 20, name: '20p', image: '20p.png' },
             { type: 'pence', value: 50, name: '50p', image: '50p.png' },
-            { type: 'pound', value: 1, name: '1', image: '1gbp.png' },
-            { type: 'pound', value: 2, name: '2', image: '2gbp.png' }
+            { type: 'pound', value: 1, name: '1 pound', image: '1pound.png' },
+            { type: 'pound', value: 2, name: '2 pounds', image: '2pound.png' }
         ];
 
         let questions = [];
@@ -120,10 +120,8 @@
             return 'монет';
         }
 
-        function formatCoinForQuestion(coin) {
-            if (coin. === '1') return '1 pound';
-            if (coin. === '2') return '2 pounds';
-            return coin.;
+        function formatCoinNameForQuestion(coin) {
+            return coin.name;
         }
 
         function generateQuestions() {
@@ -134,7 +132,7 @@
                 
                 let type2 = COIN_TYPES[Math.floor(Math.random() * COIN_TYPES.length)];
                 // Гарантуємо, що друга монета іншого номіналу
-                while (type2. === type1.name) {
+                while (type2.name === type1.name) {
                     type2 = COIN_TYPES[Math.floor(Math.random() * COIN_TYPES.length)];
                 }
 
@@ -193,7 +191,6 @@
         function getCoinHtml(coin) {
              return `<div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center font-medium text-slate-600 relative overflow-hidden shadow-sm" title="${coin.name}">
                         <img src="${coin.image}" alt="${coin.name}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
-                        <span class="z-10 bg-white/80 px-1.5 py-0.5 rounded text-xs">${coin.name}</span>
                     </div>`;
         }
 
@@ -310,7 +307,7 @@
 
             const expectedPence2 = parseFloat((q.correctTotal / 100).toFixed(2));
             if (isNaN(userPence2) || userPence2 !== expectedPence2) {
-                showFeedback("Перевір десятковий формат суми в фунтах  (друге поле).", "error");
+                showFeedback("Перевір десятковий формат суми в фунтах (друге поле).", "error");
                 return;
             }
 
