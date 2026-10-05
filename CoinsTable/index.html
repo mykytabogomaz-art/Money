@@ -120,10 +120,10 @@
             return 'монет';
         }
 
-        function formatCoinNameForQuestion(coin) {
-            if (coin.name === '£1') return '1 pound';
-            if (coin.name === '£2') return '2 pounds';
-            return coin.name;
+        function formatCoinForQuestion(coin) {
+            if (coin. === '1') return '1 pound';
+            if (coin. === '2') return '2 pounds';
+            return coin.;
         }
 
         function generateQuestions() {
@@ -134,7 +134,7 @@
                 
                 let type2 = COIN_TYPES[Math.floor(Math.random() * COIN_TYPES.length)];
                 // Гарантуємо, що друга монета іншого номіналу
-                while (type2.name === type1.name) {
+                while (type2. === type1.name) {
                     type2 = COIN_TYPES[Math.floor(Math.random() * COIN_TYPES.length)];
                 }
 
@@ -310,7 +310,7 @@
 
             const expectedPence2 = parseFloat((q.correctTotal / 100).toFixed(2));
             if (isNaN(userPence2) || userPence2 !== expectedPence2) {
-                showFeedback("Перевір десятковий формат суми в фунтах (£) (друге поле).", "error");
+                showFeedback("Перевір десятковий формат суми в фунтах  (друге поле).", "error");
                 return;
             }
 
