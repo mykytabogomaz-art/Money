@@ -1,1 +1,363 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рахуємо Британські Гроші</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            /* Using standard sans-serif for a calmer look */
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen overflow-hidden p-1 sm:p-2 flex flex-col items-center justify-center">
 
+    <!-- Main Container -->
+    <div class="w-[70%] h-[75vh] bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-3 sm:p-5 flex flex-col justify-between">
+
+        <!-- Game Content Body -->
+        <div id="game-body" class="flex flex-col h-full justify-between">
+            
+            <!-- Question Header -->
+            <div class="p-1 sm:p-2 flex flex-col items-center justify-center text-center">
+                <div id="question-counter" class="text-xs sm:text-sm font-medium text-slate-400 mb-1">Питання 1/10</div>
+                <h2 id="question-text" class="text-base sm:text-lg font-semibold text-slate-700 tracking-wide text-center">На столі лежало 3 монети по 10 pence і 2 монети по 5 pence. Скільки всього грошей лежало на столі?</h2>
+            </div>
+
+            <!-- The Table Zone -->
+            <div 
+                id="table-zone" 
+                class="h-[120px] sm:h-[150px] w-full my-1 bg-[#F7F4EF] rounded-xl border border-[#E6DEC8] p-2 flex flex-col items-center shadow-inner relative overflow-y-auto"
+                ondragover="allowDrop(event)" 
+                ondrop="dropCoin(event)"
+            >
+                <!-- Calmer wood texture -->
+                <div class="absolute inset-0 opacity-5 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] rounded-xl pointer-events-none"></div>
+                <h3 class="text-xs sm:text-sm font-medium text-[#9CA3AF] mb-1 z-10 uppercase tracking-widest">Стіл</h3>
+                
+                <!-- Droppable Area for Coins -->
+                <div id="table-coins" class="flex flex-wrap justify-center gap-2 sm:gap-4 w-full h-full content-start z-10 p-1">
+                    <span class="text-slate-400 italic text-sm mt-2 font-light">Перетягни потрібні монети сюди</span>
+                </div>
+            </div>
+
+            <!-- Coin Bank (Source) -->
+            <div class="bg-slate-50 p-2 sm:p-3 rounded-xl border border-slate-100 mb-2 flex flex-col items-center">
+                 <h3 class="text-xs sm:text-sm font-medium text-slate-400 mb-2 uppercase tracking-wider">Монети (натискай або перетягуй на стіл):</h3>
+                 <div id="bank-coins" class="flex flex-wrap justify-center gap-2 sm:gap-3 items-center w-full">
+                    <!-- Dynamic Coins injected here -->
+                 </div>
+                 
+                 <!-- Hint Block -->
+                 <div class="mt-2 bg-white border border-slate-200 rounded p-1.5 text-[11px] sm:text-xs text-slate-500 text-center shadow-sm">
+                     <div>1 pound = 100p</div>
+                     <div>2 pounds = 200p</div>
+                 </div>
+            </div>
+
+            <!-- Answer Zone -->
+            <div class="max-w-[400px] mx-auto w-full mb-2 flex flex-col items-center">
+                <label class="block text-slate-500 font-medium mb-1 text-center text-sm tracking-wide">Загальна сума на столі:</label>
+                <div class="flex items-center justify-center gap-2">
+                    <input 
+                        type="text" 
+                        id="input-pence-1"
+                        maxlength="4"
+                        class="w-20 text-center text-base sm:text-lg p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 font-medium bg-white transition-colors"
+                    >
+                    <span class="text-sm sm:text-base font-medium text-slate-500">p =</span>
+                    <input 
+                        type="text" 
+                        id="input-pence-2"
+                        maxlength="5"
+                        class="w-24 text-center text-base sm:text-lg p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 font-medium bg-white transition-colors"
+                    >
+                    <span class="text-sm sm:text-base font-medium text-slate-500">pounds</span>
+                </div>
+            </div>
+
+            <!-- Feedback Banner -->
+            <div id="feedback-banner" class="hidden p-3 rounded-lg text-center text-sm font-medium mb-3 transition-opacity"></div>
+
+            <!-- Action Buttons -->
+            <div class="text-center pb-2">
+                <button 
+                    id="action-btn"
+                    onclick="handleActionButton()"
+                    class="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2.5 px-8 rounded-lg text-base sm:text-lg transition-colors cursor-pointer shadow-sm"
+                >
+                    Перевірити відповідь
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const COIN_TYPES = [
+            { type: 'pence', value: 1, name: '1p', image: '1p.jpg' },
+            { type: 'pence', value: 2, name: '2p', image: '2p.jpg' },
+            { type: 'pence', value: 5, name: '5p', image: '5p.jpg' },
+            { type: 'pence', value: 10, name: '10p', image: '10p.jpg' },
+            { type: 'pence', value: 20, name: '20p', image: '20p.jpg' },
+            { type: 'pence', value: 50, name: '50p', image: '50p.jpg' },
+            { type: 'pound', value: 1, name: '£1', image: '1pound.jpg' },
+            { type: 'pound', value: 2, name: '£2', image: '2pound.jpg' }
+        ];
+
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let coinsOnTable = [];
+        let isAnswerChecked = false;
+
+        function getCoinWord(count) {
+            if (count === 1) return 'монета';
+            if (count >= 2 && count <= 4) return 'монети';
+            return 'монет';
+        }
+
+        function formatCoinNameForQuestion(coin) {
+            if (coin.name === '£1') return '1 pound';
+            if (coin.name === '£2') return '2 pounds';
+            return coin.name;
+        }
+
+        function generateQuestions() {
+            const generated = [];
+            while (generated.length < 10) {
+                // Тепер вибираємо випадкову монету з УСІХ можливих (включаючи фунти)
+                const type1 = COIN_TYPES[Math.floor(Math.random() * COIN_TYPES.length)];
+                
+                let type2 = COIN_TYPES[Math.floor(Math.random() * COIN_TYPES.length)];
+                // Гарантуємо, що друга монета іншого номіналу
+                while (type2.name === type1.name) {
+                    type2 = COIN_TYPES[Math.floor(Math.random() * COIN_TYPES.length)];
+                }
+
+                const qty1 = Math.floor(Math.random() * 4) + 1;
+                const qty2 = Math.floor(Math.random() * 4) + 1;
+
+                // Переводимо фунти в пенси для правильного підрахунку Total
+                const val1Pence = type1.type === 'pound' ? type1.value * 100 : type1.value;
+                const val2Pence = type2.type === 'pound' ? type2.value * 100 : type2.value;
+                
+                const totalValue = (val1Pence * qty1) + (val2Pence * qty2);
+                
+                if (totalValue >= 10) {
+                    generated.push({
+                        text: `На столі лежало ${qty1} ${getCoinWord(qty1)} по ${formatCoinNameForQuestion(type1)} і ${qty2} ${getCoinWord(qty2)} по ${formatCoinNameForQuestion(type2)}. Скільки всього грошей лежало на столі?`,
+                        correctTotal: totalValue
+                    });
+                }
+            }
+            return generated;
+        }
+
+        function initGame() {
+            questions = generateQuestions();
+            currentQuestionIndex = 0;
+            score = 0;
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            isAnswerChecked = false;
+            const q = questions[currentQuestionIndex];
+            
+            document.getElementById('question-counter').innerText = `Питання ${currentQuestionIndex + 1}/10`;
+            document.getElementById('question-text').innerText = q.text;
+
+            coinsOnTable = [];
+            
+            document.getElementById('input-pence-1').value = '';
+            document.getElementById('input-pence-2').value = '';
+            document.getElementById('input-pence-1').disabled = false;
+            document.getElementById('input-pence-2').disabled = false;
+
+            const feedback = document.getElementById('feedback-banner');
+            feedback.classList.add('hidden');
+            feedback.className = 'hidden p-3 rounded-lg text-center text-sm font-medium mb-3 transition-opacity';
+
+            const btn = document.getElementById('action-btn');
+            btn.innerText = "Перевірити відповідь";
+            btn.className = "bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2.5 px-8 rounded-lg text-base sm:text-lg transition-colors cursor-pointer shadow-sm";
+
+            renderBank();
+            renderTable();
+        }
+
+        function getCoinHtml(coin) {
+             return `<div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center font-medium text-slate-600 relative overflow-hidden shadow-sm" title="${coin.name}">
+                        <img src="${coin.image}" alt="${coin.name}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
+                        <span class="z-10 bg-white/80 px-1.5 py-0.5 rounded text-xs">${coin.name}</span>
+                    </div>`;
+        }
+
+        function renderBank() {
+            const bankContainer = document.getElementById('bank-coins');
+            bankContainer.innerHTML = '';
+
+            COIN_TYPES.forEach((coin, index) => {
+                const coinEl = document.createElement('div');
+                coinEl.className = `cursor-grab active:cursor-grabbing hover:-translate-y-0.5 transition-transform ${isAnswerChecked ? 'opacity-50 cursor-not-allowed hover:translate-y-0' : ''}`;
+                coinEl.draggable = !isAnswerChecked;
+                
+                coinEl.innerHTML = getCoinHtml(coin);
+                
+                coinEl.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', index);
+                });
+
+                coinEl.addEventListener('click', () => {
+                    if (isAnswerChecked) return;
+                    addCoinToTable(index);
+                });
+
+                bankContainer.appendChild(coinEl);
+            });
+        }
+
+        function renderTable() {
+            const tableContainer = document.getElementById('table-coins');
+            tableContainer.innerHTML = '';
+            
+            if (coinsOnTable.length === 0) {
+                tableContainer.innerHTML = '<span class="text-slate-400 italic text-sm mt-4 font-light">Перетягни потрібні монети сюди</span>';
+                return;
+            }
+
+            coinsOnTable.forEach(coin => {
+                const coinEl = document.createElement('div');
+                coinEl.className = `cursor-pointer hover:-translate-y-0.5 transition-transform ${isAnswerChecked ? 'opacity-50 cursor-not-allowed hover:translate-y-0' : ''}`;
+                
+                coinEl.innerHTML = getCoinHtml(coin);
+
+                coinEl.addEventListener('click', () => {
+                    if (isAnswerChecked) return;
+                    coinsOnTable = coinsOnTable.filter(c => c.id !== coin.id);
+                    renderTable();
+                });
+
+                tableContainer.appendChild(coinEl);
+            });
+        }
+
+        function addCoinToTable(index) {
+            const coinType = COIN_TYPES[index];
+            coinsOnTable.push({ id: Math.random().toString(36).substring(2, 9), ...coinType });
+            renderTable();
+        }
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function dropCoin(ev) {
+            ev.preventDefault();
+            if (isAnswerChecked) return;
+            const coinIndex = ev.dataTransfer.getData('text/plain');
+            if (coinIndex !== "") {
+                addCoinToTable(parseInt(coinIndex));
+            }
+        }
+
+        function handleActionButton() {
+            const btn = document.getElementById('action-btn');
+            
+            if (isAnswerChecked) {
+                currentQuestionIndex++;
+                if (currentQuestionIndex >= 10) {
+                    showCompletionScreen();
+                } else {
+                    loadQuestion();
+                }
+                return;
+            }
+
+            const parseNum = (val) => {
+                if (!val || val.trim() === '') return NaN;
+                return parseFloat(val.replace(/[^0-9.]/g, ''));
+            };
+
+            const userPence1 = parseNum(document.getElementById('input-pence-1').value);
+            const userPence2 = parseNum(document.getElementById('input-pence-2').value);
+
+            const q = questions[currentQuestionIndex];
+            
+            let currentTableTotalPence = 0;
+            let currentTableTotalPounds = 0;
+            
+            coinsOnTable.forEach(c => {
+                 if(c.type === 'pence') currentTableTotalPence += c.value;
+                 if(c.type === 'pound') currentTableTotalPounds += c.value;
+            });
+            
+            const actualTotalPenceOnTable = currentTableTotalPence + (currentTableTotalPounds * 100);
+
+            if (actualTotalPenceOnTable !== q.correctTotal) {
+                 showFeedback("На столі неправильна сума монет. Перечитай умову задачі.", "error");
+                 return;
+            }
+
+            if (isNaN(userPence1) || userPence1 !== q.correctTotal) {
+                showFeedback("Перевір загальну суму в пенсах (перше поле).", "error");
+                return;
+            }
+
+            const expectedPence2 = parseFloat((q.correctTotal / 100).toFixed(2));
+            if (isNaN(userPence2) || userPence2 !== expectedPence2) {
+                showFeedback("Перевір десятковий формат суми в фунтах (£) (друге поле).", "error");
+                return;
+            }
+
+            isAnswerChecked = true;
+            score++;
+            showFeedback("Чудово! Відповідь правильна.", "success");
+
+            document.getElementById('input-pence-1').disabled = true;
+            document.getElementById('input-pence-2').disabled = true;
+
+            btn.innerText = currentQuestionIndex === 9 ? "Переглянути результат" : "Наступне питання";
+            // Calmer next button styling
+            btn.className = "bg-teal-500 hover:bg-teal-600 text-white font-medium py-2.5 px-8 rounded-lg text-base sm:text-lg transition-colors cursor-pointer shadow-sm";
+            renderTable();
+        }
+
+        function showFeedback(message, type) {
+            const banner = document.getElementById('feedback-banner');
+            banner.classList.remove('hidden');
+            // Calmer feedback colors
+            if (type === 'error') {
+                banner.className = "p-3 rounded-lg text-center text-sm font-medium mb-3 bg-red-50 text-red-600 border border-red-100";
+            } else {
+                banner.className = "p-3 rounded-lg text-center text-sm font-medium mb-3 bg-emerald-50 text-emerald-600 border border-emerald-100";
+            }
+            banner.innerText = message;
+        }
+
+        function showCompletionScreen() {
+            const body = document.getElementById('game-body');
+            body.innerHTML = `
+                <div class="text-center flex flex-col items-center justify-center h-full space-y-6">
+                    <h2 class="text-2xl font-semibold text-slate-700">Чудова робота!</h2>
+                    <p class="text-slate-500">Ти успішно пройшов усі 10 задач.</p>
+                    <div class="pt-4">
+                        <button 
+                            onclick="initGame()"
+                            class="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2.5 px-8 rounded-lg text-lg transition-colors cursor-pointer shadow-sm"
+                        >
+                            Грати знову
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
