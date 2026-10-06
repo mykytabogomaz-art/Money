@@ -1,1 +1,346 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <!-- Спеціальний viewport для запобігання масштабуванню і збереження компактності -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Компактні Математичні Задачі</title>
+    
+    <!-- Підключення Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e9f0f5; /* Спокійний пастельно-блакитний фон */
+            overflow: hidden; /* Глобальна заборона скролу для гарантії вміщення */
+        }
+        
+        /* Видалення стрілочок з інпутів type="number" для більшої компактності */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .error-shake {
+            animation: shake 0.3s ease-in-out;
+            border-color: #f87171 !important;
+            background-color: #fef2f2 !important;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            50% { transform: translateX(4px); }
+            75% { transform: translateX(-4px); }
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex items-center justify-center p-2 sm:p-4">
+
+    <!-- Головний контейнер: максимально 80% висоти екрану, компактний -->
+    <div class="w-full max-w-2xl max-h-[85vh] bg-white rounded-xl shadow-md flex flex-col border border-slate-200">
+        
+        <!-- Верхня панель (Header) -->
+        <div class="bg-indigo-50/70 border-b border-indigo-100 px-4 py-2 flex justify-between items-center rounded-t-xl shrink-0">
+            <h1 class="text-base font-semibold text-indigo-900">Математика</h1>
+            <span id="progress-text" class="text-sm text-indigo-700 font-medium bg-white px-2 py-0.5 rounded shadow-sm border border-indigo-100">
+                1 / 10
+            </span>
+        </div>
+
+        <!-- Центральна область для контенту задачі -->
+        <div id="task-content" class="flex-1 p-4 flex flex-col justify-center gap-4 overflow-y-auto">
+            <!-- Динамічний контент задачі буде тут -->
+        </div>
+
+        <!-- Нижня панель управління (Footer) -->
+        <div class="bg-slate-50 border-t border-slate-200 px-4 py-3 flex justify-between items-center shrink-0 rounded-b-xl h-14">
+            <div id="feedback" class="text-sm font-semibold flex items-center gap-2"></div>
+            
+            <div class="flex gap-2">
+                <button id="check-btn" onclick="checkTask()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-1.5 px-5 rounded-lg transition-colors focus:ring-2 focus:ring-indigo-300 active:scale-95">
+                    Перевірити
+                </button>
+                <button id="next-btn" onclick="nextTask()" class="hidden bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium py-1.5 px-5 rounded-lg transition-colors focus:ring-2 focus:ring-emerald-300 active:scale-95 flex items-center gap-1">
+                    Наступна 
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Масив з 10 компактними задачами
+        const tasks = [
+            {
+                text: "У Каті є 3 pounds and 20p. Снікерс коштує 2 pounds. Чи вистачить у Каті грошей, щоб купити снікерс?",
+                q1: "Скільки коштує снікерс?", a1: 2.00,
+                q2: "Скільки грошей є у Каті?", a2: 3.20,
+                d: ["Каті", "вистачить", "грошей, щоб купити", "снікерс"]
+            },
+            {
+                text: "У Сашка є 5 pounds and 50p. Журнал коштує 6 pounds. Чи вистачить у Сашка грошей, щоб купити журнал?",
+                q1: "Скільки коштує журнал?", a1: 6.00,
+                q2: "Скільки грошей є у Сашка?", a2: 5.50,
+                d: ["Сашку", "не вистачить", "грошей, щоб купити", "журнал"]
+            },
+            {
+                text: "У Марії є 1 pounds and 80p. Морозиво коштує 1 pounds and 50p. Чи вистачить у Марії грошей, щоб купити морозиво?",
+                q1: "Скільки коштує морозиво?", a1: 1.50,
+                q2: "Скільки грошей є у Марії?", a2: 1.80,
+                d: ["Марії", "вистачить", "грошей, щоб купити", "морозиво"]
+            },
+            {
+                text: "У Петрика є 4 pounds. Квиток коштує 4 pounds and 20p. Чи вистачить у Петрика грошей, щоб купити квиток?",
+                q1: "Скільки коштує квиток?", a1: 4.20,
+                q2: "Скільки грошей є у Петрика?", a2: 4.00,
+                d: ["Петрику", "не вистачить", "грошей, щоб купити", "квиток"]
+            },
+            {
+                text: "У Оленки є 10 pounds. Книга коштує 8 pounds. Чи вистачить у Оленки грошей, щоб купити книгу?",
+                q1: "Скільки коштує книга?", a1: 8.00,
+                q2: "Скільки грошей є у Оленки?", a2: 10.00,
+                d: ["Оленці", "вистачить", "грошей, щоб купити", "книгу"]
+            },
+            {
+                text: "У Івана є 2 pounds and 30p. Чай коштує 3 pounds. Чи вистачить у Івана грошей, щоб купити чай?",
+                q1: "Скільки коштує чай?", a1: 3.00,
+                q2: "Скільки грошей є у Івана?", a2: 2.30,
+                d: ["Івану", "не вистачить", "грошей, щоб купити", "чай"]
+            },
+            {
+                text: "У Дарини є 7 pounds. Піца коштує 6 pounds and 50p. Чи вистачить у Дарини грошей, щоб купити піцу?",
+                q1: "Скільки коштує піца?", a1: 6.50,
+                q2: "Скільки грошей є у Дарини?", a2: 7.00,
+                d: ["Дарині", "вистачить", "грошей, щоб купити", "піцу"]
+            },
+            {
+                text: "У Максима є 1 pounds and 20p. Олівець коштує 1 pounds and 80p. Чи вистачить у Максима грошей, щоб купити олівець?",
+                q1: "Скільки коштує олівець?", a1: 1.80,
+                q2: "Скільки грошей є у Максима?", a2: 1.20,
+                d: ["Максиму", "не вистачить", "грошей, щоб купити", "олівець"]
+            },
+            {
+                text: "У Софії є 6 pounds and 10p. Блокнот коштує 5 pounds. Чи вистачить у Софії грошей, щоб купити блокнот?",
+                q1: "Скільки коштує блокнот?", a1: 5.00,
+                q2: "Скільки грошей є у Софії?", a2: 6.10,
+                d: ["Софії", "вистачить", "грошей, щоб купити", "блокнот"]
+            },
+            {
+                text: "У Андрія є 3 pounds and 50p. Сік коштує 4 pounds. Чи вистачить у Андрія грошей, щоб купити сік?",
+                q1: "Скільки коштує сік?", a1: 4.00,
+                q2: "Скільки грошей є у Андрія?", a2: 3.50,
+                d: ["Андрію", "не вистачить", "грошей, щоб купити", "сік"]
+            }
+        ];
+
+        // Опції для дропдаунів (селектів)
+        const opts = [
+            ["---", "Каті", "Сашку", "Марії", "Петрику", "Оленці", "Івану", "Дарині", "Максиму", "Софії", "Андрію"],
+            ["---", "вистачить", "не вистачить"],
+            ["---", "грошей, щоб купити"],
+            ["---", "снікерс", "журнал", "морозиво", "квиток", "книгу", "чай", "піцу", "олівець", "блокнот", "сік"]
+        ];
+
+        let currentIndex = 0;
+
+        // Допоміжна функція для генерації опцій
+        function genOptions(arr) {
+            return arr.map(o => `<option value="${o === '---' ? '' : o}">${o}</option>`).join('');
+        }
+
+        function renderTask() {
+            const t = tasks[currentIndex];
+            document.getElementById('progress-text').innerText = `${currentIndex + 1} / ${tasks.length}`;
+            
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('check-btn').classList.remove('hidden');
+            document.getElementById('feedback').innerHTML = '';
+
+            const container = document.getElementById('task-content');
+            container.innerHTML = `
+                <div class="fade-in flex flex-col gap-3">
+                    
+                    <!-- Текст задачі: дуже компактний фон -->
+                    <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-sm text-slate-800 leading-snug">
+                        ${t.text}
+                    </div>
+                    
+                    <!-- Сірий блок із запитаннями: відступи мінімізовані -->
+                    <div class="bg-slate-100 border border-slate-200 rounded-lg p-3 flex flex-col gap-3">
+                        
+                        <!-- Питання 1 (Строго один рядок: flex-row, items-center) -->
+                        <div class="flex flex-row items-center gap-2 flex-wrap">
+                            <span class="text-sm text-slate-700 font-medium">${t.q1}</span>
+                            <input type="number" step="0.01" id="in1" class="w-16 h-8 border border-slate-300 rounded bg-white text-center text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400" autocomplete="off">
+                            <span class="text-sm text-slate-700 font-medium">pounds</span>
+                        </div>
+
+                        <!-- Питання 2 (Строго один рядок) -->
+                        <div class="flex flex-row items-center gap-2 flex-wrap">
+                            <span class="text-sm text-slate-700 font-medium">${t.q2}</span>
+                            <input type="number" step="0.01" id="in2" class="w-16 h-8 border border-slate-300 rounded bg-white text-center text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400" autocomplete="off">
+                            <span class="text-sm text-slate-700 font-medium">pounds</span>
+                        </div>
+
+                    </div>
+                    
+                    <!-- Блок конструювання відповіді -->
+                    <div class="flex flex-col gap-1.5 pt-1">
+                        <span class="text-sm font-semibold text-slate-800">Відповідь:</span>
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <select id="sel0" class="h-8 bg-white border border-slate-300 rounded px-1 text-sm text-slate-700 focus:outline-none focus:border-indigo-400">
+                                ${genOptions(opts[0])}
+                            </select>
+                            
+                            <select id="sel1" class="h-8 bg-white border border-slate-300 rounded px-1 text-sm text-slate-700 focus:outline-none focus:border-indigo-400">
+                                ${genOptions(opts[1])}
+                            </select>
+                            
+                            <select id="sel2" class="h-8 bg-white border border-slate-300 rounded px-1 text-sm text-slate-700 focus:outline-none focus:border-indigo-400">
+                                ${genOptions(opts[2])}
+                            </select>
+                            
+                            <select id="sel3" class="h-8 bg-white border border-slate-300 rounded px-1 text-sm text-slate-700 focus:outline-none focus:border-indigo-400">
+                                ${genOptions(opts[3])}
+                            </select>
+                            <span class="text-sm font-bold text-slate-700">.</span>
+                        </div>
+                    </div>
+                    
+                </div>
+            `;
+        }
+
+        function checkTask() {
+            const t = tasks[currentIndex];
+            let isCorrect = true;
+
+            // Отримуємо елементи
+            const i1 = document.getElementById('in1');
+            const i2 = document.getElementById('in2');
+            const selects = [
+                document.getElementById('sel0'),
+                document.getElementById('sel1'),
+                document.getElementById('sel2'),
+                document.getElementById('sel3')
+            ];
+
+            // Валідація числових полів (порівнюємо як числа, щоб 2.1 == 2.10)
+            const v1 = parseFloat(i1.value);
+            const v2 = parseFloat(i2.value);
+
+            if (isNaN(v1) || v1 !== t.a1) {
+                setError(i1);
+                isCorrect = false;
+            } else {
+                setSuccess(i1);
+            }
+
+            if (isNaN(v2) || v2 !== t.a2) {
+                setError(i2);
+                isCorrect = false;
+            } else {
+                setSuccess(i2);
+            }
+
+            // Валідація селектів
+            selects.forEach((sel, idx) => {
+                if (sel.value !== t.d[idx]) {
+                    setError(sel);
+                    isCorrect = false;
+                } else {
+                    setSuccess(sel);
+                }
+            });
+
+            const fb = document.getElementById('feedback');
+
+            if (isCorrect) {
+                fb.innerHTML = `
+                    <svg class="w-5 h-5 text-emerald-500 animate-pop" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    <span class="text-emerald-600 animate-pop">Правильно!</span>
+                `;
+                
+                // Блокування полів
+                i1.disabled = true; i2.disabled = true;
+                selects.forEach(s => s.disabled = true);
+                
+                document.getElementById('check-btn').classList.add('hidden');
+                document.getElementById('next-btn').classList.remove('hidden');
+            } else {
+                fb.innerHTML = `
+                    <span class="text-rose-500 animate-pop">Помилка. Спробуй ще!</span>
+                `;
+            }
+        }
+
+        // Допоміжні функції підсвічування
+        function setError(el) {
+            el.classList.remove('border-slate-300', 'border-emerald-400');
+            el.classList.add('error-shake');
+            setTimeout(() => el.classList.remove('error-shake'), 300);
+        }
+
+        function setSuccess(el) {
+            el.classList.remove('border-slate-300', 'error-shake');
+            el.classList.add('border-emerald-400', 'bg-emerald-50/50');
+        }
+
+        function nextTask() {
+            if (currentIndex < tasks.length - 1) {
+                currentIndex++;
+                renderTask();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function showEndScreen() {
+            document.querySelector('.bg-slate-50.border-t').style.display = 'none'; // Ховаємо футер
+            document.getElementById('progress-text').innerText = "Кінець!";
+            
+            document.getElementById('task-content').innerHTML = `
+                <div class="h-full flex flex-col items-center justify-center fade-in text-center gap-3">
+                    <div class="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-2">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-800">Чудова робота!</h2>
+                    <p class="text-sm text-slate-600">Всі задачі виконані.</p>
+                    <button onclick="location.reload()" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-6 rounded-lg transition-colors">
+                        Почати заново
+                    </button>
+                </div>
+            `;
+        }
+
+        // Запуск додатку
+        window.onload = renderTask;
+    </script>
+</body>
+</html>
