@@ -1,1 +1,372 @@
 
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Порівняння грошей</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e9f0f5; 
+            overflow: hidden; 
+        }
+        
+        /* Прибирання стандартних стрілочок з полів number */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* Анімації */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        .error-shake {
+            animation: shake 0.4s ease-in-out;
+            border-color: #f43f5e !important;
+            background-color: #fff1f2 !important;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-4px); }
+            40% { transform: translateX(4px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+
+        /* Стилі для подвійного повзунка (Dual Range Slider) */
+        .dual-range { pointer-events: none; outline: none; }
+        
+        /* Перший повзунок (Синій) */
+        #slider1::-webkit-slider-thumb {
+            pointer-events: auto; appearance: none; width: 24px; height: 24px; border-radius: 50%;
+            background: #4f46e5; cursor: pointer; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        #slider1::-moz-range-thumb {
+            pointer-events: auto; width: 24px; height: 24px; border-radius: 50%;
+            background: #4f46e5; cursor: pointer; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        
+        /* Другий повзунок (Зелений) */
+        #slider2::-webkit-slider-thumb {
+            pointer-events: auto; appearance: none; width: 24px; height: 24px; border-radius: 50%;
+            background: #4f46e5; cursor: pointer; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        #slider2::-moz-range-thumb {
+            pointer-events: auto; width: 24px; height: 24px; border-radius: 50%;
+            background: #4f46e5; cursor: pointer; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-4xl h-[75vh] bg-white rounded-3xl shadow-xl flex flex-col overflow-hidden border border-slate-100">
+        
+        <!-- Header -->
+        <div class="bg-indigo-50 border-b border-indigo-100 px-6 py-4 flex justify-between items-center shrink-0">
+            <h1 class="text-lg font-bold text-indigo-900">Порівняння сум</h1>
+            <span id="progress-text" class="text-sm text-indigo-700 font-semibold bg-white px-3 py-1 rounded-full shadow-sm border border-indigo-100">
+                1 / 10
+            </span>
+        </div>
+
+        <!-- Центральна область (Гнучка, без скролу) -->
+        <div class="flex-1 flex flex-col p-6 sm:p-8 overflow-hidden bg-white">
+            <div id="task-content" class="flex-1 flex flex-col justify-between w-full fade-in">
+                <!-- Динамічний контент генерується через JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Масив завдань
+        const tasks = [
+            { text: "У Каті 1 pound and 20p, а у Олени 2 pounds and 10p. У кого більше грошей?", n1: "Каті", v1: 1.2, n2: "Олени", v2: 2.1, d: ["У Олени", "більше", "грошей", "ніж у Каті"] },
+            { text: "У Максима 3 pounds and 50p, а у Дениса 3 pounds and 10p. У кого більше грошей?", n1: "Максима", v1: 3.5, n2: "Дениса", v2: 3.1, d: ["У Максима", "більше", "грошей", "ніж у Дениса"] },
+            { text: "У Анни 1 pound and 10p, а у Софії 2 pounds and 50p. У кого більше грошей?", n1: "Анни", v1: 1.1, n2: "Софії", v2: 2.5, d: ["У Софії", "більше", "грошей", "ніж у Анни"] },
+            { text: "У Артема 2 pounds and 80p, а у Івана 1 pound and 90p. У кого більше грошей?", n1: "Артема", v1: 2.8, n2: "Івана", v2: 1.9, d: ["У Артема", "більше", "грошей", "ніж у Івана"] },
+            { text: "У Марії 0 pounds and 50p, а у Віки 1 pound and 20p. У кого більше грошей?", n1: "Марії", v1: 0.5, n2: "Віки", v2: 1.2, d: ["У Віки", "більше", "грошей", "ніж у Марії"] },
+            { text: "У Саші 3 pounds, а у Павла 2 pounds and 90p. У кого більше грошей?", n1: "Саші", v1: 3.0, n2: "Павла", v2: 2.9, d: ["У Саші", "більше", "грошей", "ніж у Павла"] },
+            { text: "У Дарини 1 pound and 30p, а у Юлі 0 pounds and 10p. У кого більше грошей?", n1: "Дарини", v1: 1.3, n2: "Юлі", v2: 0.1, d: ["У Дарини", "більше", "грошей", "ніж у Юлі"] },
+            { text: "У Олега 2 pounds and 20p, а у Роми 2 pounds. У кого більше грошей?", n1: "Олега", v1: 2.2, n2: "Роми", v2: 2.0, d: ["У Олега", "більше", "грошей", "ніж у Роми"] },
+            { text: "У Насті 2 pounds and 40p, а у Іри 2 pounds and 60p. У кого більше грошей?", n1: "Насті", v1: 2.4, n2: "Іри", v2: 2.6, d: ["У Іри", "більше", "грошей", "ніж у Насті"] },
+            { text: "У Тімура 3 pounds and 20p, а у Богдана 3 pounds and 80p. У кого більше грошей?", n1: "Тімура", v1: 3.2, n2: "Богдана", v2: 3.8, d: ["У Богдана", "більше", "грошей", "ніж у Тімура"] }
+        ];
+
+        let currentIndex = 0;
+
+        function genOptions(arr) {
+            return arr.map(o => `<option value="${o === '---' ? '' : o}">${o}</option>`).join('');
+        }
+
+        function renderTask() {
+            const t = tasks[currentIndex];
+            document.getElementById('progress-text').innerText = `Задача ${currentIndex + 1} з ${tasks.length}`;
+            const container = document.getElementById('task-content');
+            
+            const opts0 = ["---", `У ${t.n1}`, `У ${t.n2}`];
+            const opts1 = ["---", "більше", "менше"];
+            const opts2 = ["---", "грошей"];
+            const opts3 = ["---", `ніж у ${t.n1}`, `ніж у ${t.n2}`];
+
+            container.innerHTML = `
+                <!-- Головне питання -->
+                <div class="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4 text-base font-semibold text-slate-800 shadow-sm shrink-0">
+                    ${t.text}
+                </div>
+                
+                <!-- Сірий блок із запитаннями та шкалою -->
+                <div id="grey-block" class="bg-slate-100 border border-slate-200 rounded-2xl p-5 flex flex-col gap-4 shadow-inner shrink-0 my-auto">
+                    
+                    <div class="flex flex-row items-center gap-3">
+                        <span class="text-sm text-slate-700 font-medium">Скільки грошей у ${t.n1}?</span>
+                        <input type="number" step="0.01" id="in1" class="w-16 h-8 border border-slate-300 rounded-md bg-white text-center text-sm font-semibold focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-800" autocomplete="off">
+                        <span class="text-sm text-slate-700 font-medium">pounds</span>
+                    </div>
+
+                    <div class="flex flex-row items-center gap-3">
+                        <span class="text-sm text-slate-700 font-medium">Скільки грошей у ${t.n2}?</span>
+                        <input type="number" step="0.01" id="in2" class="w-16 h-8 border border-slate-300 rounded-md bg-white text-center text-sm font-semibold focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-800" autocomplete="off">
+                        <span class="text-sm text-slate-700 font-medium">pounds</span>
+                    </div>
+
+                    <!-- Візуальна шкала з динамічними тултипами -->
+                    <div class="flex flex-col mt-2 px-2 bg-white rounded-lg border border-slate-200 pb-2 pt-1" id="slider-container">
+                        <span class="text-[11px] font-semibold text-slate-500 mb-1">Познач ці суми на шкалі:</span>
+                        
+                        <div class="relative w-full h-12 flex items-center">
+                            <!-- Фонова лінія -->
+                            <div class="absolute w-full h-2 bg-slate-200 rounded-full top-[22px]"></div>
+                            
+                            <!-- Підказка та повзунок 1 -->
+                            <div id="tooltip1" class="absolute top-0 transform -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow pointer-events-none z-30 transition-transform">0.00</div>
+                            <input type="range" min="0" max="4" step="0.1" value="0" id="slider1" class="dual-range absolute w-full top-[18px] appearance-none bg-transparent z-10">
+                            
+                            <!-- Підказка та повзунок 2 -->
+                            <div id="tooltip2" class="absolute top-0 transform -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow pointer-events-none z-30 transition-transform">4.00</div>
+                            <input type="range" min="0" max="4" step="0.1" value="4" id="slider2" class="dual-range absolute w-full top-[18px] appearance-none bg-transparent z-10">
+                        </div>
+                        
+                        <!-- Підписи осей -->
+                        <div class="flex justify-between w-full text-xs font-bold text-slate-400 px-1 -mt-1">
+                            <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Згрупований нижній блок (Дропдауни + Кнопка Перевірити) -->
+                <div class="flex flex-col gap-2 shrink-0">
+                    
+                    <div class="flex flex-row flex-wrap items-center gap-2">
+                        <span class="text-sm font-bold text-slate-700">Відповідь:</span>
+                        <select id="sel0" class="h-9 bg-white border border-slate-300 rounded-md px-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 cursor-pointer font-medium">
+                            ${genOptions(opts0)}
+                        </select>
+                        <select id="sel1" class="h-9 bg-white border border-slate-300 rounded-md px-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 cursor-pointer font-medium">
+                            ${genOptions(opts1)}
+                        </select>
+                        <select id="sel2" class="h-9 bg-white border border-slate-300 rounded-md px-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 cursor-pointer font-medium">
+                            ${genOptions(opts2)}
+                        </select>
+                        <select id="sel3" class="h-9 bg-white border border-slate-300 rounded-md px-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 cursor-pointer font-medium">
+                            ${genOptions(opts3)}
+                        </select>
+                        <span class="text-base font-black text-slate-700">.</span>
+                    </div>
+
+                    <div class="flex items-center gap-3 mt-1">
+                        <button id="check-btn" onclick="checkTask()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2.5 px-6 rounded-lg transition-colors focus:ring-2 focus:ring-indigo-300 active:scale-95 shadow-sm whitespace-nowrap">
+                            Перевірити
+                        </button>
+                        <button id="next-btn" onclick="nextTask()" class="hidden bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold py-2.5 px-6 rounded-lg transition-colors focus:ring-2 focus:ring-emerald-300 active:scale-95 shadow-sm flex items-center gap-1 whitespace-nowrap">
+                            Наступна 
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+                        <div id="feedback" class="text-sm font-bold flex flex-1 items-center gap-2"></div>
+                    </div>
+                </div>
+            `;
+            
+            setupSliders();
+        }
+
+        function setupSliders() {
+            const s1 = document.getElementById('slider1');
+            const s2 = document.getElementById('slider2');
+
+            // Функція оновлення значення та позиції підказки
+            function updateTooltip(sliderId, tooltipId) {
+                const slider = document.getElementById(sliderId);
+                const tooltip = document.getElementById(tooltipId);
+                const val = parseFloat(slider.value);
+                
+                // Відображаємо значення суворо з 2 знаками (наприклад 1.20)
+                tooltip.textContent = val.toFixed(2);
+                
+                // Вираховуємо позицію в процентах
+                const percent = (val / 4);
+                
+                // Коригуємо позицію тултипа, щоб він точно збігався з круглим повзунком (ширина якого 24px)
+                const thumbWidth = 24; 
+                const offset = (0.5 - percent) * thumbWidth;
+                tooltip.style.left = `calc(${percent * 100}% + ${offset}px)`;
+            }
+
+            // Додаємо слухачів подій, щоб притягувати фокус (z-index) до активного повзунка
+            s1.addEventListener('input', () => {
+                s1.style.zIndex = 20; s2.style.zIndex = 10;
+                updateTooltip('slider1', 'tooltip1');
+            });
+            s2.addEventListener('input', () => {
+                s2.style.zIndex = 20; s1.style.zIndex = 10;
+                updateTooltip('slider2', 'tooltip2');
+            });
+
+            // Ініціалізація стартових позицій
+            updateTooltip('slider1', 'tooltip1');
+            updateTooltip('slider2', 'tooltip2');
+        }
+
+        function checkTask() {
+            const t = tasks[currentIndex];
+            let isCorrect = true;
+
+            const i1 = document.getElementById('in1');
+            const i2 = document.getElementById('in2');
+            const selects = [
+                document.getElementById('sel0'), document.getElementById('sel1'),
+                document.getElementById('sel2'), document.getElementById('sel3')
+            ];
+            
+            const slider1 = document.getElementById('slider1');
+            const slider2 = document.getElementById('slider2');
+            const sliderContainer = document.getElementById('slider-container');
+
+            const v1 = parseFloat(i1.value.replace(',', '.'));
+            const v2 = parseFloat(i2.value.replace(',', '.'));
+
+            // Валідація текстових полів
+            if (isNaN(v1) || Math.abs(v1 - t.v1) > 0.001) {
+                setError(i1); isCorrect = false;
+            } else { setSuccess(i1); }
+
+            if (isNaN(v2) || Math.abs(v2 - t.v2) > 0.001) {
+                setError(i2); isCorrect = false;
+            } else { setSuccess(i2); }
+
+            // Валідація повзунків (порядок синій/зелений не важливий, важливі самі значення на шкалі)
+            const s1 = parseFloat(slider1.value);
+            const s2 = parseFloat(slider2.value);
+            const minSelected = Math.min(s1, s2);
+            const maxSelected = Math.max(s1, s2);
+            const expectedMin = Math.min(t.v1, t.v2);
+            const expectedMax = Math.max(t.v1, t.v2);
+
+            if (Math.abs(minSelected - expectedMin) > 0.05 || Math.abs(maxSelected - expectedMax) > 0.05) {
+                setError(sliderContainer);
+                isCorrect = false;
+            } else {
+                setSuccess(sliderContainer);
+            }
+
+            // Валідація випадаючих списків
+            selects.forEach((sel, idx) => {
+                if (sel.value !== t.d[idx]) {
+                    setError(sel); isCorrect = false;
+                } else { setSuccess(sel); }
+            });
+
+            // Відгук для користувача
+            const fb = document.getElementById('feedback');
+
+            if (isCorrect) {
+                fb.innerHTML = `
+                    <div class="flex items-center gap-1.5 animate-pop text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded border border-emerald-100">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+                        <span>Правильно!</span>
+                    </div>
+                `;
+                
+                i1.disabled = true; i2.disabled = true;
+                slider1.disabled = true; slider2.disabled = true;
+                selects.forEach(s => s.disabled = true);
+                
+                document.getElementById('check-btn').classList.add('hidden');
+                document.getElementById('next-btn').classList.remove('hidden');
+            } else {
+                fb.innerHTML = `
+                    <div class="flex items-center gap-1.5 animate-pop text-rose-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <span>Є помилки!</span>
+                    </div>
+                `;
+            }
+        }
+
+        function setError(el) {
+            el.classList.remove('border-slate-300', 'border-emerald-400');
+            el.classList.add('error-shake', 'border-rose-400');
+            setTimeout(() => el.classList.remove('error-shake'), 400);
+        }
+
+        function setSuccess(el) {
+            el.classList.remove('border-slate-300', 'border-rose-400', 'error-shake');
+            el.classList.add('border-emerald-400', 'bg-emerald-50/50');
+        }
+
+        function nextTask() {
+            if (currentIndex < tasks.length - 1) {
+                currentIndex++;
+                renderTask();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function showEndScreen() {
+            document.getElementById('progress-text').innerText = "Фініш!";
+            document.getElementById('progress-text').classList.replace('text-indigo-700', 'text-emerald-700');
+            
+            document.getElementById('task-content').innerHTML = `
+                <div class="h-full w-full flex flex-col items-center justify-center fade-in text-center gap-4">
+                    <div class="w-20 h-20 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center shadow-inner mb-2">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-800">Чудова робота!</h2>
+                    <p class="text-sm text-slate-600 font-medium">Всі 10 задач успішно виконані.</p>
+                    <button onclick="location.reload()" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-3 px-8 rounded-xl transition-colors shadow-sm active:scale-95">
+                        Почати заново
+                    </button>
+                </div>
+            `;
+        }
+
+        window.onload = renderTask;
+    </script>
+</body>
+</html>
