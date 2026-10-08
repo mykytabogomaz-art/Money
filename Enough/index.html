@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -13,11 +12,12 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             overflow: hidden;
-            /* Забороняємо стандартні жести браузера для зручного перетягування */
+            /* Забороняємо стандартні жести браузера для зручного перетягування на мобільних */
             touch-action: none; 
+            user-select: none;
         }
 
         .board {
@@ -28,10 +28,36 @@
             text-align: center;
             width: 90%;
             max-width: 550px;
+            position: relative;
+        }
+
+        /* Екран гри */
+        #game-screen {
+            display: block;
+        }
+
+        /* Екран завершення (спочатку прихований) */
+        #end-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 10px;
+        }
+
+        .progress-text {
+            font-size: 1.4rem;
+            color: #1976D2;
+            font-weight: bold;
+            margin-bottom: 15px;
+            background-color: #E3F2FD;
+            padding: 8px 20px;
+            border-radius: 20px;
+            display: inline-block;
         }
 
         .section-title {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             color: #555;
             margin-bottom: 10px;
             font-weight: bold;
@@ -50,7 +76,7 @@
         }
 
         .item-emoji {
-            font-size: 4rem;
+            font-size: 3.5rem;
             background: white;
             padding: 10px;
             border-radius: 15px;
@@ -79,10 +105,9 @@
         }
 
         .wallet-emoji {
-            font-size: 4rem;
+            font-size: 3.5rem;
         }
 
-        /* Монетки та комірки */
         .coin-slot {
             width: 55px;
             height: 55px;
@@ -107,7 +132,6 @@
             font-weight: bold;
             color: #E65100;
             cursor: grab;
-            /* Важливо для мобільних пристроїв */
             touch-action: none; 
             z-index: 10;
         }
@@ -125,8 +149,8 @@
         }
 
         .btn {
-            font-size: 1.8rem;
-            padding: 15px 30px;
+            font-size: 1.6rem;
+            padding: 12px 25px;
             border: none;
             border-radius: 15px;
             cursor: pointer;
@@ -142,7 +166,7 @@
         .btn:active { transform: translateY(6px); box-shadow: none; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        #feedback-icon { font-size: 3.5rem; height: 70px; margin-top: 10px; }
+        #feedback-icon { font-size: 3rem; height: 60px; margin-top: 5px; }
 
         #next-btn {
             font-size: 1.5rem;
@@ -158,7 +182,6 @@
         }
         #next-btn:active { transform: translateY(5px); box-shadow: none; }
 
-        /* Анімації */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-10px); }
@@ -173,40 +196,90 @@
             100% { transform: scale(1); opacity: 1; }
         }
         .pop { animation: pop 0.4s ease-out; }
-        .feedback-text { font-size: 1.8rem; font-weight: bold; color: #333; }
+        .feedback-text { font-size: 1.6rem; font-weight: bold; color: #333; }
+
+        /* Стилі для фінального екрану */
+        .end-title {
+            font-size: 2.5rem;
+            color: #4CAF50;
+            margin-bottom: 20px;
+            animation: pop 0.6s ease-out;
+        }
+        
+        .stars-container {
+            font-size: 4rem;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        @keyframes starJump {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-30px) scale(1.2); }
+        }
+        
+        .star { animation: starJump 1s infinite; }
+        .star:nth-child(2) { animation-delay: 0.2s; }
+        .star:nth-child(3) { animation-delay: 0.4s; }
+
+        .btn-restart {
+            background-color: #FF9800;
+            color: white;
+            box-shadow: 0 6px 0 #F57C00;
+            font-size: 1.8rem;
+            padding: 15px 40px;
+        }
     </style>
 </head>
 <body>
 
     <div class="board">
-        <div class="section-title">Магазин 🏷️</div>
-        <div class="store-area">
-            <div class="item-emoji" id="store-item">🍎</div>
-            <div class="coin-row" id="price-container">
-                <!-- Комірки ціни -->
+        <div id="game-screen">
+            <div class="progress-text" id="progress-indicator">Питання 1 / 15</div>
+
+            <div class="section-title">Магазин 🏷️</div>
+            <div class="store-area">
+                <div class="item-emoji" id="store-item">🍎</div>
+                <div class="coin-row" id="price-container">
+                    <!-- Комірки ціни будуть тут -->
+                </div>
             </div>
-        </div>
 
-        <div class="section-title">Мій гаманець 👛</div>
-        <div class="wallet-area" id="wallet-dropzone">
-            <div class="wallet-emoji">👛</div>
-            <div class="coin-row" id="wallet-container">
-                <!-- Монетки -->
+            <div class="section-title">Мій гаманець 👛</div>
+            <div class="wallet-area" id="wallet-dropzone">
+                <div class="wallet-emoji">👛</div>
+                <div class="coin-row" id="wallet-container">
+                    <!-- Монетки будуть тут -->
+                </div>
             </div>
+
+            <div class="section-title">Вистачить? 🤔</div>
+            <div class="button-container">
+                <button class="btn btn-yes" id="btn-yes" onclick="checkAnswer(true)">✅ Так</button>
+                <button class="btn btn-no" id="btn-no" onclick="checkAnswer(false)">❌ Ні</button>
+            </div>
+
+            <div id="feedback-icon"></div>
+            <button id="next-btn" onclick="nextQuestion()">Далі ➡️</button>
         </div>
 
-        <div class="section-title">Вистачить? 🤔</div>
-        <div class="button-container">
-            <button class="btn btn-yes" id="btn-yes" onclick="checkAnswer(true)">✅ Так</button>
-            <button class="btn btn-no" id="btn-no" onclick="checkAnswer(false)">❌ Ні</button>
+        <div id="end-screen">
+            <div class="end-title">Молодець! 🎉</div>
+            <div class="stars-container">
+                <div class="star">⭐</div>
+                <div class="star">🌟</div>
+                <div class="star">⭐</div>
+            </div>
+            <p class="feedback-text" style="margin-bottom: 30px;">Ти пройшов всі 15 завдань!</p>
+            <button class="btn btn-restart" onclick="startGame()">Грати знову 🔄</button>
         </div>
-
-        <div id="feedback-icon"></div>
-        <button id="next-btn" onclick="initGame()">Далі ➡️</button>
     </div>
 
     <script>
-        const items = ['🍎', '🧸', '🚗', '🍦', '⚽', '🎨', '🧩', '🎈'];
+        const items = ['🍎', '🧸', '🚗', '🍦', '⚽', '🎨', '🧩', '🎈', '📚', '🚂'];
+        const TOTAL_QUESTIONS = 15;
+        
+        let currentQuestion = 1;
         let price = 0;
         let money = 0;
         let isClickable = true;
@@ -220,19 +293,34 @@
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
-        function initGame() {
+        function startGame() {
+            currentQuestion = 1;
+            document.getElementById('game-screen').style.display = 'block';
+            document.getElementById('end-screen').style.display = 'none';
+            loadQuestion();
+        }
+
+        function loadQuestion() {
             isClickable = true;
+            
+            // Оновлюємо індикатор прогресу
+            document.getElementById('progress-indicator').innerText = `Питання ${currentQuestion} / ${TOTAL_QUESTIONS}`;
+
+            // Скидаємо UI
             document.getElementById('feedback-icon').innerHTML = '';
             document.getElementById('next-btn').style.display = 'none';
             document.getElementById('btn-yes').disabled = false;
             document.getElementById('btn-no').disabled = false;
 
+            // Вибираємо випадковий предмет
             const randomItem = items[Math.floor(Math.random() * items.length)];
             document.getElementById('store-item').innerText = randomItem;
 
+            // Генеруємо ціну та кількість грошей (від 1 до 5)
             price = getRandomInt(1, 5);
             money = getRandomInt(1, 5);
 
+            // Малюємо комірки ціни (порожні слоти)
             const priceContainer = document.getElementById('price-container');
             priceContainer.innerHTML = '';
             for (let i = 0; i < price; i++) {
@@ -241,6 +329,7 @@
                 priceContainer.appendChild(slot);
             }
 
+            // Малюємо монетки в гаманці
             const walletContainer = document.getElementById('wallet-container');
             walletContainer.innerHTML = '';
             for (let i = 0; i < money; i++) {
@@ -252,13 +341,14 @@
             }
         }
 
-        // Логіка перетягування (Drag & Drop)
         function startDrag(e) {
             if (!isClickable) return;
             activeCoin = e.target;
             
-            // Запобігаємо стандартній поведінці браузера
+            // Запобігаємо стандартній поведінці браузера (скрол, зум)
             e.preventDefault();
+            // Захоплюємо pointer, щоб події йшли до монетки, навіть якщо курсор вийшов за її межі
+            activeCoin.setPointerCapture(e.pointerId);
 
             const rect = activeCoin.getBoundingClientRect();
             shiftX = e.clientX - rect.left;
@@ -293,7 +383,6 @@
 
             if (elemBelow) {
                 let droppableSlot = elemBelow.closest('.coin-slot');
-                let walletArea = elemBelow.closest('.wallet-area');
 
                 if (droppableSlot && droppableSlot.children.length === 0) {
                     // Якщо відпустили над порожньою коміркою
@@ -306,6 +395,11 @@
                 document.getElementById('wallet-container').appendChild(activeCoin);
             }
 
+            // Відпускаємо pointer
+            if(activeCoin.hasPointerCapture(e.pointerId)) {
+                activeCoin.releasePointerCapture(e.pointerId);
+            }
+
             // Скидаємо стилі позиціонування
             activeCoin.style.position = 'static';
             activeCoin.style.left = 'auto';
@@ -314,7 +408,6 @@
             activeCoin = null;
         });
 
-        // Перевірка відповіді
         function checkAnswer(choseEnough) {
             if (!isClickable) return;
 
@@ -324,18 +417,22 @@
             const feedback = document.getElementById('feedback-icon');
 
             if (isCorrect) {
+                // Правильна відповідь
                 feedback.innerHTML = '<div class="pop"><span class="feedback-text">🌟 Правильно!</span></div>';
                 document.getElementById('next-btn').style.display = 'block';
                 
+                // Блокуємо кнопки та перетягування до наступного питання
                 isClickable = false;
                 document.getElementById('btn-yes').disabled = true;
                 document.getElementById('btn-no').disabled = true;
             } else {
+                // Неправильна відповідь
                 feedback.innerHTML = '<span class="feedback-text">❌ Спробуй ще</span>';
                 
-                const board = document.querySelector('.board');
+                // Анімація трясіння дошки
+                const board = document.querySelector('#game-screen');
                 board.classList.remove('shake');
-                void board.offsetWidth; 
+                void board.offsetWidth; // Примусовий reflow
                 board.classList.add('shake');
                 
                 setTimeout(() => {
@@ -344,7 +441,21 @@
             }
         }
 
-        window.onload = initGame;
+        function nextQuestion() {
+            currentQuestion++;
+            
+            if (currentQuestion > TOTAL_QUESTIONS) {
+                // Показуємо фінальний екран, якщо всі питання пройдені
+                document.getElementById('game-screen').style.display = 'none';
+                document.getElementById('end-screen').style.display = 'flex';
+            } else {
+                // Завантажуємо наступне питання
+                loadQuestion();
+            }
+        }
+
+        // Запуск гри при завантаженні сторінки
+        window.onload = startGame;
     </script>
 </body>
 </html>
