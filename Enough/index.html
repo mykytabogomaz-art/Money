@@ -1,1 +1,350 @@
 
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Чи вистачить грошей?</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #FFF3E0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            /* Забороняємо стандартні жести браузера для зручного перетягування */
+            touch-action: none; 
+        }
+
+        .board {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 550px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #555;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        /* Магазин */
+        .store-area {
+            background-color: #E3F2FD;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            min-height: 80px;
+        }
+
+        .item-emoji {
+            font-size: 4rem;
+            background: white;
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .coin-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            flex-grow: 1;
+            min-height: 60px;
+        }
+
+        /* Гаманець */
+        .wallet-area {
+            background-color: #E8F5E9;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            min-height: 80px;
+        }
+
+        .wallet-emoji {
+            font-size: 4rem;
+        }
+
+        /* Монетки та комірки */
+        .coin-slot {
+            width: 55px;
+            height: 55px;
+            border: 3px dashed #90CAF9;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .coin {
+            width: 55px;
+            height: 55px;
+            background-color: #FFD54F;
+            border: 3px solid #FFA000;
+            border-radius: 50%;
+            box-shadow: inset 0 -4px 0 rgba(255, 160, 0, 0.4), 0 4px 6px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #E65100;
+            cursor: grab;
+            /* Важливо для мобільних пристроїв */
+            touch-action: none; 
+            z-index: 10;
+        }
+
+        .coin:active {
+            cursor: grabbing;
+        }
+
+        /* Кнопки */
+        .button-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            font-size: 1.8rem;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-yes { background-color: #4CAF50; color: white; box-shadow: 0 6px 0 #2E7D32; }
+        .btn-no { background-color: #F44336; color: white; box-shadow: 0 6px 0 #C62828; }
+        .btn:active { transform: translateY(6px); box-shadow: none; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        #feedback-icon { font-size: 3.5rem; height: 70px; margin-top: 10px; }
+
+        #next-btn {
+            font-size: 1.5rem;
+            padding: 10px 40px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #1565C0;
+            display: none;
+            margin: 0 auto;
+        }
+        #next-btn:active { transform: translateY(5px); box-shadow: none; }
+
+        /* Анімації */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+        }
+        .shake { animation: shake 0.4s; }
+
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pop { animation: pop 0.4s ease-out; }
+        .feedback-text { font-size: 1.8rem; font-weight: bold; color: #333; }
+    </style>
+</head>
+<body>
+
+    <div class="board">
+        <div class="section-title">Магазин 🏷️</div>
+        <div class="store-area">
+            <div class="item-emoji" id="store-item">🍎</div>
+            <div class="coin-row" id="price-container">
+                <!-- Комірки ціни -->
+            </div>
+        </div>
+
+        <div class="section-title">Мій гаманець 👛</div>
+        <div class="wallet-area" id="wallet-dropzone">
+            <div class="wallet-emoji">👛</div>
+            <div class="coin-row" id="wallet-container">
+                <!-- Монетки -->
+            </div>
+        </div>
+
+        <div class="section-title">Вистачить? 🤔</div>
+        <div class="button-container">
+            <button class="btn btn-yes" id="btn-yes" onclick="checkAnswer(true)">✅ Так</button>
+            <button class="btn btn-no" id="btn-no" onclick="checkAnswer(false)">❌ Ні</button>
+        </div>
+
+        <div id="feedback-icon"></div>
+        <button id="next-btn" onclick="initGame()">Далі ➡️</button>
+    </div>
+
+    <script>
+        const items = ['🍎', '🧸', '🚗', '🍦', '⚽', '🎨', '🧩', '🎈'];
+        let price = 0;
+        let money = 0;
+        let isClickable = true;
+
+        // Змінні для перетягування
+        let activeCoin = null;
+        let shiftX = 0;
+        let shiftY = 0;
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function initGame() {
+            isClickable = true;
+            document.getElementById('feedback-icon').innerHTML = '';
+            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('btn-yes').disabled = false;
+            document.getElementById('btn-no').disabled = false;
+
+            const randomItem = items[Math.floor(Math.random() * items.length)];
+            document.getElementById('store-item').innerText = randomItem;
+
+            price = getRandomInt(1, 5);
+            money = getRandomInt(1, 5);
+
+            const priceContainer = document.getElementById('price-container');
+            priceContainer.innerHTML = '';
+            for (let i = 0; i < price; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'coin-slot';
+                priceContainer.appendChild(slot);
+            }
+
+            const walletContainer = document.getElementById('wallet-container');
+            walletContainer.innerHTML = '';
+            for (let i = 0; i < money; i++) {
+                const coin = document.createElement('div');
+                coin.className = 'coin';
+                // Додаємо обробник натискання для початку перетягування
+                coin.addEventListener('pointerdown', startDrag);
+                walletContainer.appendChild(coin);
+            }
+        }
+
+        // Логіка перетягування (Drag & Drop)
+        function startDrag(e) {
+            if (!isClickable) return;
+            activeCoin = e.target;
+            
+            // Запобігаємо стандартній поведінці браузера
+            e.preventDefault();
+
+            const rect = activeCoin.getBoundingClientRect();
+            shiftX = e.clientX - rect.left;
+            shiftY = e.clientY - rect.top;
+
+            // Змінюємо стиль для вільного переміщення поверх усього
+            activeCoin.style.position = 'fixed';
+            activeCoin.style.zIndex = 1000;
+            document.body.appendChild(activeCoin);
+
+            moveAt(e.clientX, e.clientY);
+        }
+
+        function moveAt(clientX, clientY) {
+            if (!activeCoin) return;
+            activeCoin.style.left = clientX - shiftX + 'px';
+            activeCoin.style.top = clientY - shiftY + 'px';
+        }
+
+        document.addEventListener('pointermove', function(e) {
+            if (!activeCoin) return;
+            moveAt(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('pointerup', function(e) {
+            if (!activeCoin) return;
+
+            // Тимчасово ховаємо монетку, щоб дізнатися, над яким елементом ми її відпустили
+            activeCoin.style.display = 'none';
+            let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+            activeCoin.style.display = 'flex';
+
+            if (elemBelow) {
+                let droppableSlot = elemBelow.closest('.coin-slot');
+                let walletArea = elemBelow.closest('.wallet-area');
+
+                if (droppableSlot && droppableSlot.children.length === 0) {
+                    // Якщо відпустили над порожньою коміркою
+                    droppableSlot.appendChild(activeCoin);
+                } else {
+                    // Якщо відпустили будь-де інде або комірка зайнята — повертаємо в гаманець
+                    document.getElementById('wallet-container').appendChild(activeCoin);
+                }
+            } else {
+                document.getElementById('wallet-container').appendChild(activeCoin);
+            }
+
+            // Скидаємо стилі позиціонування
+            activeCoin.style.position = 'static';
+            activeCoin.style.left = 'auto';
+            activeCoin.style.top = 'auto';
+            activeCoin.style.zIndex = '10';
+            activeCoin = null;
+        });
+
+        // Перевірка відповіді
+        function checkAnswer(choseEnough) {
+            if (!isClickable) return;
+
+            const actuallyEnough = money >= price;
+            const isCorrect = choseEnough === actuallyEnough;
+            
+            const feedback = document.getElementById('feedback-icon');
+
+            if (isCorrect) {
+                feedback.innerHTML = '<div class="pop"><span class="feedback-text">🌟 Правильно!</span></div>';
+                document.getElementById('next-btn').style.display = 'block';
+                
+                isClickable = false;
+                document.getElementById('btn-yes').disabled = true;
+                document.getElementById('btn-no').disabled = true;
+            } else {
+                feedback.innerHTML = '<span class="feedback-text">❌ Спробуй ще</span>';
+                
+                const board = document.querySelector('.board');
+                board.classList.remove('shake');
+                void board.offsetWidth; 
+                board.classList.add('shake');
+                
+                setTimeout(() => {
+                    if (isClickable) feedback.innerHTML = ''; 
+                }, 1500);
+            }
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
