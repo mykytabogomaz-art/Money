@@ -1,1 +1,317 @@
 
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Більше чи Менше?</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f0fdf4; /* Soft calming green */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            touch-action: manipulation;
+            user-select: none;
+            overflow: hidden; /* Prevent scrolling */
+        }
+
+        /* The container for the blocks */
+        .column-card {
+            background-color: white;
+            border-radius: 2rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            border: 6px solid transparent;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.3s;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Push content to bottom */
+            height: 50vh; /* Responsive height */
+            min-height: 300px;
+            max-height: 500px;
+            width: 100%;
+        }
+
+        .column-card:active:not(.locked) {
+            transform: scale(0.97);
+        }
+
+        /* Stack layout for blocks (bottom to top) */
+        .block-stack {
+            display: flex;
+            flex-direction: column-reverse; /* Stack from bottom up */
+            align-items: center;
+            gap: 4px;
+            padding: 20px;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Individual block styling */
+        .building-block {
+            width: 80%;
+            height: 16%; /* Relative to container to fit up to ~6 blocks */
+            max-height: 60px;
+            background: linear-gradient(145deg, #60a5fa, #3b82f6); /* Nice blue gradient */
+            border-radius: 12px;
+            box-shadow: inset 0 4px 0 rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.15);
+            animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            opacity: 0;
+            transform: scale(0.5);
+        }
+
+        /* Stagger block entrance animations */
+        .building-block:nth-child(1) { animation-delay: 0.0s; }
+        .building-block:nth-child(2) { animation-delay: 0.1s; }
+        .building-block:nth-child(3) { animation-delay: 0.2s; }
+        .building-block:nth-child(4) { animation-delay: 0.3s; }
+        .building-block:nth-child(5) { animation-delay: 0.4s; }
+        .building-block:nth-child(6) { animation-delay: 0.5s; }
+
+        /* Animations */
+        @keyframes gentle-shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes pop-in {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .anim-shake {
+            animation: gentle-shake 0.5s ease;
+            border-color: #fca5a5 !important; /* Soft red border */
+        }
+
+        .anim-correct {
+            border-color: #4ade80 !important; /* Soft green border */
+            animation: bounce 0.6s ease;
+        }
+
+        .success-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 1.5rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+
+        .success-overlay.show {
+            opacity: 1;
+        }
+
+        .checkmark {
+            font-size: 6rem;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+            transform: scale(0);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .success-overlay.show .checkmark {
+            transform: scale(1);
+        }
+        
+        .locked {
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="w-full max-w-3xl flex flex-col items-center px-4 sm:px-8">
+        
+        <!-- Question Area -->
+        <div class="h-24 sm:h-32 flex items-center justify-center mb-4 sm:mb-8 w-full">
+            <h1 id="question-text" class="text-5xl sm:text-6xl text-slate-800 font-black tracking-wider text-center drop-shadow-sm transition-all duration-300">
+                <!-- Injected via JS -->
+            </h1>
+        </div>
+
+        <!-- Two Columns for Comparison -->
+        <div class="flex flex-row justify-between w-full gap-4 sm:gap-8 mb-8">
+            
+            <!-- Left Column -->
+            <div id="col-left" class="column-card flex-1">
+                <div id="stack-left" class="block-stack">
+                    <!-- Blocks injected here -->
+                </div>
+                <!-- Success feedback -->
+                <div id="overlay-left" class="success-overlay">
+                    <span class="checkmark">✅</span>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div id="col-right" class="column-card flex-1">
+                <div id="stack-right" class="block-stack">
+                    <!-- Blocks injected here -->
+                </div>
+                <!-- Success feedback -->
+                <div id="overlay-right" class="success-overlay">
+                    <span class="checkmark">✅</span>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Next Button Area -->
+        <div class="h-20 w-full flex justify-center items-center">
+            <button id="btn-next" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold text-3xl sm:text-4xl py-4 px-12 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95">
+                Далі ➔
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Game State Variables
+        let currentConcept = 'more'; // 'more' or 'less'
+        let leftCount = 0;
+        let rightCount = 0;
+        let isLocked = false;
+
+        // DOM Elements
+        const elQuestionText = document.getElementById('question-text');
+        const colLeft = document.getElementById('col-left');
+        const colRight = document.getElementById('col-right');
+        const stackLeft = document.getElementById('stack-left');
+        const stackRight = document.getElementById('stack-right');
+        const overlayLeft = document.getElementById('overlay-left');
+        const overlayRight = document.getElementById('overlay-right');
+        const btnNext = document.getElementById('btn-next');
+
+        function initRound() {
+            // Reset board state
+            isLocked = false;
+            colLeft.classList.remove('locked', 'anim-correct', 'anim-shake');
+            colRight.classList.remove('locked', 'anim-correct', 'anim-shake');
+            overlayLeft.classList.remove('show');
+            overlayRight.classList.remove('show');
+            btnNext.classList.add('hidden');
+            
+            // Randomly choose 'more' or 'less' (50/50 chance)
+            currentConcept = Math.random() > 0.5 ? 'more' : 'less';
+            
+            // Update Text
+            elQuestionText.textContent = currentConcept === 'more' ? 'Де БІЛЬШЕ?' : 'Де МЕНШЕ?';
+            // Slight visual refresh on text
+            elQuestionText.style.transform = 'scale(0.9)';
+            setTimeout(() => elQuestionText.style.transform = 'scale(1)', 100);
+
+            // Generate random block counts (1 to 6)
+            // Ensure they are strictly different so there is a clear answer
+            leftCount = Math.floor(Math.random() * 6) + 1;
+            do {
+                rightCount = Math.floor(Math.random() * 6) + 1;
+            } while (leftCount === rightCount);
+
+            // Render the blocks in the DOM
+            renderBlocks(stackLeft, leftCount);
+            renderBlocks(stackRight, rightCount);
+        }
+
+        function renderBlocks(container, count) {
+            // Clear existing blocks
+            container.innerHTML = '';
+            
+            // Create blocks up to 'count'
+            for (let i = 0; i < count; i++) {
+                const block = document.createElement('div');
+                block.className = 'building-block';
+                // Alternate colors slightly for better visual distinction if desired, 
+                // but solid color is best for pure quantity comparison.
+                container.appendChild(block);
+            }
+        }
+
+        function handleSelection(side) {
+            if (isLocked) return;
+            
+            let isCorrect = false;
+
+            // Evaluate based on the current prompt
+            if (currentConcept === 'more') {
+                if (side === 'left' && leftCount > rightCount) isCorrect = true;
+                if (side === 'right' && rightCount > leftCount) isCorrect = true;
+            } else if (currentConcept === 'less') {
+                if (side === 'left' && leftCount < rightCount) isCorrect = true;
+                if (side === 'right' && rightCount < leftCount) isCorrect = true;
+            }
+
+            if (isCorrect) {
+                processWin(side);
+            } else {
+                processMistake(side);
+            }
+        }
+
+        function processWin(side) {
+            isLocked = true; // Prevent further clicking
+            colLeft.classList.add('locked');
+            colRight.classList.add('locked');
+
+            const targetCol = side === 'left' ? colLeft : colRight;
+            const targetOverlay = side === 'left' ? overlayLeft : overlayRight;
+
+            // Show correct animations
+            targetCol.classList.add('anim-correct');
+            targetOverlay.classList.add('show');
+
+            // Show the next button
+            btnNext.classList.remove('hidden');
+        }
+
+        function processMistake(side) {
+            const targetCol = side === 'left' ? colLeft : colRight;
+            
+            // Temporarily lock to prevent spamming
+            isLocked = true;
+
+            // Trigger shake animation
+            targetCol.classList.remove('anim-shake');
+            void targetCol.offsetWidth; // Force reflow to restart animation
+            targetCol.classList.add('anim-shake');
+
+            // Unlock after animation finishes
+            setTimeout(() => {
+                targetCol.classList.remove('anim-shake');
+                isLocked = false;
+            }, 500);
+        }
+
+        // Event Listeners
+        colLeft.addEventListener('click', () => handleSelection('left'));
+        colRight.addEventListener('click', () => handleSelection('right'));
+        btnNext.addEventListener('click', initRound);
+
+        // Start first round on load
+        window.onload = initRound;
+
+    </script>
+</body>
+</html>
