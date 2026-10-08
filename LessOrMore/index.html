@@ -1,317 +1,337 @@
-
 <!DOCTYPE html>
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Більше чи Менше?</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
-    
+    <!-- Імпорт шрифту Nunito -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Nunito', sans-serif;
-            background-color: #f0fdf4; /* Soft calming green */
-            margin: 0;
-            padding: 0;
+            background-color: #f1faf5; /* Світло-м'ятний фон */
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
             touch-action: manipulation;
-            user-select: none;
-            overflow: hidden; /* Prevent scrolling */
         }
 
-        /* The container for the blocks */
-        .column-card {
-            background-color: white;
-            border-radius: 2rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            border: 6px solid transparent;
-            transition: transform 0.2s, box-shadow 0.2s, border-color 0.3s;
-            position: relative;
-            cursor: pointer;
+        #counter {
+            font-size: 1.2rem;
+            color: #64748B;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        #question {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: #263345; /* Темно-синій/сірий колір тексту */
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .game-container {
             display: flex;
-            flex-direction: column;
-            justify-content: flex-end; /* Push content to bottom */
-            height: 50vh; /* Responsive height */
-            min-height: 300px;
-            max-height: 500px;
-            width: 100%;
+            gap: 20px; /* Відстань між картками */
+            align-items: flex-end;
+            margin-bottom: 2rem;
         }
 
-        .column-card:active:not(.locked) {
+        .card {
+            position: relative; /* Для позиціонування галочки */
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            justify-content: flex-start;
+            width: 200px;
+            height: 280px;
+            background-color: #FFFFFF;
+            border-radius: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+            cursor: pointer;
+            border: 4px solid transparent; /* Підготовка для зеленої рамки */
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .card:active {
             transform: scale(0.97);
         }
 
-        /* Stack layout for blocks (bottom to top) */
-        .block-stack {
+        .card.correct {
+            border-color: #2ecc71; /* Зелена рамка */
+        }
+
+        .blocks-container {
             display: flex;
-            flex-direction: column-reverse; /* Stack from bottom up */
+            flex-direction: column-reverse; /* Блоки складаються знизу вгору */
             align-items: center;
-            gap: 4px;
-            padding: 20px;
             width: 100%;
             height: 100%;
+            justify-content: flex-start;
+            transition: opacity 0.3s;
         }
 
-        /* Individual block styling */
-        .building-block {
-            width: 80%;
-            height: 16%; /* Relative to container to fit up to ~6 blocks */
-            max-height: 60px;
-            background: linear-gradient(145deg, #60a5fa, #3b82f6); /* Nice blue gradient */
-            border-radius: 12px;
-            box-shadow: inset 0 4px 0 rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.15);
-            animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            opacity: 0;
-            transform: scale(0.5);
+        /* Блоки стають напівпрозорими при правильній відповіді */
+        .card.correct .blocks-container {
+            opacity: 0.3;
         }
 
-        /* Stagger block entrance animations */
-        .building-block:nth-child(1) { animation-delay: 0.0s; }
-        .building-block:nth-child(2) { animation-delay: 0.1s; }
-        .building-block:nth-child(3) { animation-delay: 0.2s; }
-        .building-block:nth-child(4) { animation-delay: 0.3s; }
-        .building-block:nth-child(5) { animation-delay: 0.4s; }
-        .building-block:nth-child(6) { animation-delay: 0.5s; }
-
-        /* Animations */
-        @keyframes gentle-shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-8px); }
-            40%, 80% { transform: translateX(8px); }
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
-
-        @keyframes pop-in {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .anim-shake {
-            animation: gentle-shake 0.5s ease;
-            border-color: #fca5a5 !important; /* Soft red border */
-        }
-
-        .anim-correct {
-            border-color: #4ade80 !important; /* Soft green border */
-            animation: bounce 0.6s ease;
-        }
-
-        .success-overlay {
+        .check-mark {
             position: absolute;
-            inset: 0;
-            display: flex;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            width: 70px;
+            height: 70px;
+            background-color: #42d77d;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1), inset 0 -4px 0 rgba(0,0,0,0.1);
             align-items: center;
             justify-content: center;
-            background-color: rgba(255, 255, 255, 0.7);
-            border-radius: 1.5rem;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
             z-index: 10;
         }
 
-        .success-overlay.show {
-            opacity: 1;
+        .card.correct .check-mark {
+            display: flex;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        .checkmark {
-            font-size: 6rem;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
-            transform: scale(0);
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        /* Біла галочка всередині зеленого квадрата */
+        .check-mark::after {
+            content: '';
+            width: 20px;
+            height: 40px;
+            border: solid white;
+            border-width: 0 6px 6px 0;
+            transform: rotate(45deg);
+            margin-top: -10px;
+            border-radius: 2px;
         }
 
-        .success-overlay.show .checkmark {
-            transform: scale(1);
+        .block {
+            width: 150px;
+            height: 38px;
+            background-color: #4a8ff6;
+            border-radius: 8px;
+            margin-top: 4px; 
+            /* Ефект 3D для блоків */
+            box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0,0,0,0.1);
+            
+            /* Початковий стан для анімації появи */
+            opacity: 0;
+            transform: scale(0.5) translateY(20px);
+            /* Анімація додається через JS з затримкою */
+            animation: blockAppear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
+
+        @keyframes blockAppear {
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .bottom-area {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #next-btn {
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.8rem;
+            padding: 12px 45px;
+            background-color: #2ecc71; /* Зелений колір кнопки */
+            color: white;
+            border: none;
+            border-radius: 40px; /* Округла кнопка */
+            cursor: pointer;
+            font-weight: 800;
+            box-shadow: 0 6px 0 #27ae60;
+            display: none; /* Прихована за замовчуванням */
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        #next-btn:active {
+            transform: translateY(6px);
+            box-shadow: none;
+        }
+
+        #feedback-icon {
+            font-size: 3rem;
+            display: none; /* Показуємо тільки хрестик при помилці */
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-8px); }
+        }
+        .shake { animation: shake 0.4s; }
         
-        .locked {
-            pointer-events: none;
+        .finish-screen {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #2ecc71;
+            text-align: center;
+            margin-top: 20vh;
         }
-
     </style>
 </head>
 <body>
 
-    <div class="w-full max-w-3xl flex flex-col items-center px-4 sm:px-8">
-        
-        <!-- Question Area -->
-        <div class="h-24 sm:h-32 flex items-center justify-center mb-4 sm:mb-8 w-full">
-            <h1 id="question-text" class="text-5xl sm:text-6xl text-slate-800 font-black tracking-wider text-center drop-shadow-sm transition-all duration-300">
-                <!-- Injected via JS -->
-            </h1>
+    <div id="counter">Завдання 1 з 15</div>
+    <div id="question">Де МЕНШЕ?</div>
+
+    <div class="game-container" id="game-container">
+        <!-- Ліва картка -->
+        <div class="card" id="card-left" onclick="checkAnswer('left')">
+            <div class="check-mark"></div>
+            <div class="blocks-container" id="blocks-left"></div>
         </div>
-
-        <!-- Two Columns for Comparison -->
-        <div class="flex flex-row justify-between w-full gap-4 sm:gap-8 mb-8">
-            
-            <!-- Left Column -->
-            <div id="col-left" class="column-card flex-1">
-                <div id="stack-left" class="block-stack">
-                    <!-- Blocks injected here -->
-                </div>
-                <!-- Success feedback -->
-                <div id="overlay-left" class="success-overlay">
-                    <span class="checkmark">✅</span>
-                </div>
-            </div>
-
-            <!-- Right Column -->
-            <div id="col-right" class="column-card flex-1">
-                <div id="stack-right" class="block-stack">
-                    <!-- Blocks injected here -->
-                </div>
-                <!-- Success feedback -->
-                <div id="overlay-right" class="success-overlay">
-                    <span class="checkmark">✅</span>
-                </div>
-            </div>
-            
+        <!-- Права картка -->
+        <div class="card" id="card-right" onclick="checkAnswer('right')">
+            <div class="check-mark"></div>
+            <div class="blocks-container" id="blocks-right"></div>
         </div>
+    </div>
 
-        <!-- Next Button Area -->
-        <div class="h-20 w-full flex justify-center items-center">
-            <button id="btn-next" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold text-3xl sm:text-4xl py-4 px-12 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95">
-                Далі ➔
-            </button>
-        </div>
-
+    <div class="bottom-area">
+        <div id="feedback-icon"></div>
+        <button id="next-btn" onclick="initGame()">Далі ➔</button>
     </div>
 
     <script>
-        // Game State Variables
-        let currentConcept = 'more'; // 'more' or 'less'
         let leftCount = 0;
         let rightCount = 0;
-        let isLocked = false;
+        let currentMode = 'less'; 
+        let isClickable = true;
+        
+        let currentQuestion = 0;
+        const totalQuestions = 15;
 
-        // DOM Elements
-        const elQuestionText = document.getElementById('question-text');
-        const colLeft = document.getElementById('col-left');
-        const colRight = document.getElementById('col-right');
-        const stackLeft = document.getElementById('stack-left');
-        const stackRight = document.getElementById('stack-right');
-        const overlayLeft = document.getElementById('overlay-left');
-        const overlayRight = document.getElementById('overlay-right');
-        const btnNext = document.getElementById('btn-next');
-
-        function initRound() {
-            // Reset board state
-            isLocked = false;
-            colLeft.classList.remove('locked', 'anim-correct', 'anim-shake');
-            colRight.classList.remove('locked', 'anim-correct', 'anim-shake');
-            overlayLeft.classList.remove('show');
-            overlayRight.classList.remove('show');
-            btnNext.classList.add('hidden');
-            
-            // Randomly choose 'more' or 'less' (50/50 chance)
-            currentConcept = Math.random() > 0.5 ? 'more' : 'less';
-            
-            // Update Text
-            elQuestionText.textContent = currentConcept === 'more' ? 'Де БІЛЬШЕ?' : 'Де МЕНШЕ?';
-            // Slight visual refresh on text
-            elQuestionText.style.transform = 'scale(0.9)';
-            setTimeout(() => elQuestionText.style.transform = 'scale(1)', 100);
-
-            // Generate random block counts (1 to 6)
-            // Ensure they are strictly different so there is a clear answer
-            leftCount = Math.floor(Math.random() * 6) + 1;
-            do {
-                rightCount = Math.floor(Math.random() * 6) + 1;
-            } while (leftCount === rightCount);
-
-            // Render the blocks in the DOM
-            renderBlocks(stackLeft, leftCount);
-            renderBlocks(stackRight, rightCount);
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
-        function renderBlocks(container, count) {
-            // Clear existing blocks
+        function initGame() {
+            currentQuestion++;
+            
+            // Перевірка на завершення гри
+            if (currentQuestion > totalQuestions) {
+                document.body.innerHTML = '<div class="finish-screen">🎉 Молодець!<br>Всі завдання виконано!</div>';
+                return;
+            }
+            
+            document.getElementById('counter').innerText = `Завдання ${currentQuestion} з ${totalQuestions}`;
+            isClickable = true;
+            
+            // Ховаємо кнопку і хрестик
+            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('feedback-icon').style.display = 'none';
+            document.getElementById('feedback-icon').innerHTML = '';
+            
+            // Знімаємо класи з карток
+            const cardLeft = document.getElementById('card-left');
+            const cardRight = document.getElementById('card-right');
+            cardLeft.classList.remove('correct', 'shake');
+            cardRight.classList.remove('correct', 'shake');
+
+            // Вибираємо режим
+            currentMode = Math.random() > 0.5 ? 'more' : 'less';
+            const questionEl = document.getElementById('question');
+            
+            if (currentMode === 'more') {
+                questionEl.innerHTML = 'Де БІЛЬШЕ?';
+            } else {
+                questionEl.innerHTML = 'Де МЕНШЕ?';
+            }
+
+            // Генеруємо кількість блоків
+            leftCount = getRandomInt(1, 5);
+            rightCount = getRandomInt(1, 5);
+            
+            // Запобігаємо однаковій кількості
+            while (leftCount === rightCount) {
+                rightCount = getRandomInt(1, 5);
+            }
+
+            drawBlocks('blocks-left', leftCount);
+            drawBlocks('blocks-right', rightCount);
+        }
+
+        function drawBlocks(id, count) {
+            const container = document.getElementById(id);
             container.innerHTML = '';
             
-            // Create blocks up to 'count'
+            // Оскільки контейнер має flex-direction: column-reverse,
+            // перший доданий елемент (i=0) буде візуально знизу.
             for (let i = 0; i < count; i++) {
                 const block = document.createElement('div');
-                block.className = 'building-block';
-                // Alternate colors slightly for better visual distinction if desired, 
-                // but solid color is best for pure quantity comparison.
+                block.className = 'block';
+                
+                // Додаємо затримку для анімації, щоб вони з'являлися по черзі (один за одним) знизу вгору
+                block.style.animationDelay = `${i * 0.15}s`;
+                
                 container.appendChild(block);
             }
         }
 
-        function handleSelection(side) {
-            if (isLocked) return;
-            
-            let isCorrect = false;
+        function checkAnswer(clickedSide) {
+            if (!isClickable) return;
 
-            // Evaluate based on the current prompt
-            if (currentConcept === 'more') {
-                if (side === 'left' && leftCount > rightCount) isCorrect = true;
-                if (side === 'right' && rightCount > leftCount) isCorrect = true;
-            } else if (currentConcept === 'less') {
-                if (side === 'left' && leftCount < rightCount) isCorrect = true;
-                if (side === 'right' && rightCount < leftCount) isCorrect = true;
-            }
-
-            if (isCorrect) {
-                processWin(side);
+            let correctSide = '';
+            if (currentMode === 'more') {
+                correctSide = leftCount > rightCount ? 'left' : 'right';
             } else {
-                processMistake(side);
+                correctSide = leftCount < rightCount ? 'left' : 'right';
+            }
+
+            const clickedCard = document.getElementById(`card-${clickedSide}`);
+            const feedbackIcon = document.getElementById('feedback-icon');
+            const nextBtn = document.getElementById('next-btn');
+
+            if (clickedSide === correctSide) {
+                // Правильно: показуємо галочку та кнопку
+                clickedCard.classList.add('correct');
+                
+                feedbackIcon.style.display = 'none';
+                nextBtn.style.display = 'block';
+                
+                isClickable = false;
+            } else {
+                // Неправильно: трясемо картку та показуємо хрестик
+                clickedCard.classList.remove('shake');
+                void clickedCard.offsetWidth; // Перезапуск анімації
+                clickedCard.classList.add('shake');
+                
+                feedbackIcon.innerHTML = '❌';
+                feedbackIcon.style.display = 'block';
+                
+                setTimeout(() => {
+                    feedbackIcon.style.display = 'none';
+                }, 1000);
             }
         }
 
-        function processWin(side) {
-            isLocked = true; // Prevent further clicking
-            colLeft.classList.add('locked');
-            colRight.classList.add('locked');
-
-            const targetCol = side === 'left' ? colLeft : colRight;
-            const targetOverlay = side === 'left' ? overlayLeft : overlayRight;
-
-            // Show correct animations
-            targetCol.classList.add('anim-correct');
-            targetOverlay.classList.add('show');
-
-            // Show the next button
-            btnNext.classList.remove('hidden');
-        }
-
-        function processMistake(side) {
-            const targetCol = side === 'left' ? colLeft : colRight;
-            
-            // Temporarily lock to prevent spamming
-            isLocked = true;
-
-            // Trigger shake animation
-            targetCol.classList.remove('anim-shake');
-            void targetCol.offsetWidth; // Force reflow to restart animation
-            targetCol.classList.add('anim-shake');
-
-            // Unlock after animation finishes
-            setTimeout(() => {
-                targetCol.classList.remove('anim-shake');
-                isLocked = false;
-            }, 500);
-        }
-
-        // Event Listeners
-        colLeft.addEventListener('click', () => handleSelection('left'));
-        colRight.addEventListener('click', () => handleSelection('right'));
-        btnNext.addEventListener('click', initRound);
-
-        // Start first round on load
-        window.onload = initRound;
-
+        // Запуск гри при завантаженні сторінки
+        window.onload = initGame;
     </script>
 </body>
 </html>
