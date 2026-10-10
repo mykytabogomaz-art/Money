@@ -1,1 +1,425 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Чи вистачить грошей?</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #FFF3E0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            touch-action: none; 
+        }
 
+        .board {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 550px;
+        }
+
+        #counter {
+            font-size: 1.2rem;
+            color: #64748B;
+            font-weight: 800;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #555;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        /* Магазин */
+        .store-area {
+            background-color: #E3F2FD;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            min-height: 80px;
+        }
+
+        .item-emoji {
+            font-size: 4rem;
+            background: white;
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .coin-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            flex-grow: 1;
+            min-height: 60px;
+        }
+
+        /* Гаманець */
+        .wallet-area {
+            background-color: #E8F5E9;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            min-height: 80px;
+        }
+
+        .wallet-emoji {
+            font-size: 4rem;
+        }
+
+        /* Монетки та комірки */
+        .coin-slot {
+            width: 55px;
+            height: 55px;
+            border: 3px dashed #90CAF9;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .coin {
+            width: 55px;
+            height: 55px;
+            background-color: #FFD54F;
+            border: 3px solid #FFA000;
+            border-radius: 50%;
+            box-shadow: inset 0 -4px 0 rgba(255, 160, 0, 0.4), 0 4px 6px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #E65100;
+            cursor: grab;
+            touch-action: none; 
+            z-index: 10;
+        }
+
+        .coin:active {
+            cursor: grabbing;
+        }
+
+        /* Поле вводу та кнопки */
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        #answer-input {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 1.5rem;
+            padding: 12px 20px;
+            border: 3px solid #90CAF9;
+            border-radius: 15px;
+            outline: none;
+            width: 80%;
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        #answer-input:focus {
+            border-color: #2196F3;
+        }
+
+        #answer-input:disabled {
+            background-color: #E8F5E9;
+            border-color: #4CAF50;
+            color: #2E7D32;
+        }
+
+        .btn {
+            font-size: 1.5rem;
+            padding: 12px 40px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.1s;
+        }
+
+        .btn-check {
+            background-color: #4CAF50;
+            color: white;
+            box-shadow: 0 6px 0 #2E7D32;
+        }
+
+        .btn:active {
+            transform: translateY(6px);
+            box-shadow: none;
+        }
+
+        #feedback-icon {
+            font-size: 3.5rem;
+            height: 70px;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #next-btn {
+            font-size: 1.5rem;
+            padding: 12px 40px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #1565C0;
+            display: none;
+            margin: 0 auto;
+        }
+        #next-btn:active { transform: translateY(5px); box-shadow: none; }
+
+        /* Анімації */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+        }
+        .shake { animation: shake 0.4s; }
+
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pop { animation: pop 0.4s ease-out; }
+        .feedback-text { font-size: 1.8rem; font-weight: bold; color: #333; }
+        
+        .finish-screen {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            font-size: 3rem;
+            font-weight: bold;
+            color: #4CAF50;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="board">
+        <!-- Лічильник питань -->
+        <div id="counter">Завдання 1 з 15</div>
+
+        <div class="section-title">Магазин 🏷️</div>
+        <div class="store-area">
+            <div class="item-emoji" id="store-item">🍎</div>
+            <div class="coin-row" id="price-container"></div>
+        </div>
+
+        <div class="section-title">Мій гаманець 👛</div>
+        <div class="wallet-area" id="wallet-dropzone">
+            <div class="wallet-emoji">👛</div>
+            <div class="coin-row" id="wallet-container"></div>
+        </div>
+
+        <div class="section-title">Вистачить чи не вистачить?</div>
+        <div class="input-container">
+            <input type="text" id="answer-input" autocomplete="off">
+            <button class="btn btn-check" id="btn-check" onclick="checkTextAnswer()">Перевірити</button>
+        </div>
+
+        <div id="feedback-icon"></div>
+        <button id="next-btn" onclick="initGame()">Далі ➡️</button>
+    </div>
+
+    <script>
+        const items = ['🍎', '🧸', '🚗', '🍦', '⚽', '🎨', '🧩', '🎈'];
+        let price = 0;
+        let money = 0;
+        let isClickable = true;
+        
+        // Змінні для нумерації
+        let currentQuestion = 0;
+        const totalQuestions = 15;
+
+        let activeCoin = null;
+        let shiftX = 0;
+        let shiftY = 0;
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function initGame() {
+            currentQuestion++;
+            
+            // Перевірка на завершення гри
+            if (currentQuestion > totalQuestions) {
+                document.body.innerHTML = '<div class="finish-screen">🎉 Молодець!<br>Всі завдання виконано!</div>';
+                return;
+            }
+            
+            // Оновлюємо текст лічильника
+            document.getElementById('counter').innerText = `Завдання ${currentQuestion} з ${totalQuestions}`;
+
+            isClickable = true;
+            document.getElementById('feedback-icon').innerHTML = '';
+            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('btn-check').style.display = 'block';
+            
+            const inputEl = document.getElementById('answer-input');
+            inputEl.value = '';
+            inputEl.disabled = false;
+            inputEl.style.borderColor = '#90CAF9';
+            // Повертаємо фокус у поле для зручності (на комп'ютерах)
+            inputEl.focus();
+
+            const randomItem = items[Math.floor(Math.random() * items.length)];
+            document.getElementById('store-item').innerText = randomItem;
+
+            price = getRandomInt(1, 5);
+            money = getRandomInt(1, 5);
+
+            const priceContainer = document.getElementById('price-container');
+            priceContainer.innerHTML = '';
+            for (let i = 0; i < price; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'coin-slot';
+                priceContainer.appendChild(slot);
+            }
+
+            const walletContainer = document.getElementById('wallet-container');
+            walletContainer.innerHTML = '';
+            for (let i = 0; i < money; i++) {
+                const coin = document.createElement('div');
+                coin.className = 'coin';
+                coin.addEventListener('pointerdown', startDrag);
+                walletContainer.appendChild(coin);
+            }
+        }
+
+        // Логіка перетягування (Drag & Drop)
+        function startDrag(e) {
+            if (!isClickable) return;
+            activeCoin = e.target;
+            e.preventDefault();
+
+            const rect = activeCoin.getBoundingClientRect();
+            shiftX = e.clientX - rect.left;
+            shiftY = e.clientY - rect.top;
+
+            activeCoin.style.position = 'fixed';
+            activeCoin.style.zIndex = 1000;
+            document.body.appendChild(activeCoin);
+
+            moveAt(e.clientX, e.clientY);
+        }
+
+        function moveAt(clientX, clientY) {
+            if (!activeCoin) return;
+            activeCoin.style.left = clientX - shiftX + 'px';
+            activeCoin.style.top = clientY - shiftY + 'px';
+        }
+
+        document.addEventListener('pointermove', function(e) {
+            if (!activeCoin) return;
+            moveAt(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('pointerup', function(e) {
+            if (!activeCoin) return;
+
+            activeCoin.style.display = 'none';
+            let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+            activeCoin.style.display = 'flex';
+
+            if (elemBelow) {
+                let droppableSlot = elemBelow.closest('.coin-slot');
+                if (droppableSlot && droppableSlot.children.length === 0) {
+                    droppableSlot.appendChild(activeCoin);
+                } else {
+                    document.getElementById('wallet-container').appendChild(activeCoin);
+                }
+            } else {
+                document.getElementById('wallet-container').appendChild(activeCoin);
+            }
+
+            activeCoin.style.position = 'static';
+            activeCoin.style.left = 'auto';
+            activeCoin.style.top = 'auto';
+            activeCoin.style.zIndex = '10';
+            activeCoin = null;
+        });
+
+        // Перевірка текстової відповіді
+        function checkTextAnswer() {
+            if (!isClickable) return;
+
+            const inputEl = document.getElementById('answer-input');
+            let userAnswer = inputEl.value.trim().toLowerCase();
+            userAnswer = userAnswer.replace(/\s+/g, ' ');
+
+            const actuallyEnough = money >= price;
+            const expectedAnswer = actuallyEnough ? 'вистачить' : 'не вистачить';
+            
+            const feedback = document.getElementById('feedback-icon');
+
+            if (userAnswer === expectedAnswer) {
+                // Правильно
+                feedback.innerHTML = '<div class="pop"><span class="feedback-text">🌟 Правильно!</span></div>';
+                document.getElementById('next-btn').style.display = 'block';
+                document.getElementById('btn-check').style.display = 'none';
+                
+                inputEl.disabled = true; 
+                isClickable = false;
+            } else {
+                // Неправильно або помилка
+                feedback.innerHTML = '<span class="feedback-text">❌ Спробуй ще</span>';
+                
+                inputEl.classList.remove('shake');
+                void inputEl.offsetWidth; 
+                inputEl.classList.add('shake');
+                inputEl.style.borderColor = '#F44336';
+                
+                setTimeout(() => {
+                    inputEl.style.borderColor = '#90CAF9';
+                    if (isClickable) feedback.innerHTML = ''; 
+                }, 1500);
+            }
+        }
+
+        // Натискання Enter для перевірки
+        document.getElementById('answer-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkTextAnswer();
+            }
+        });
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
