@@ -1,1 +1,349 @@
 
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Більше чи Менше?</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f1faf5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            touch-action: manipulation;
+        }
+
+        #counter {
+            font-size: 1.2rem;
+            color: #64748B;
+            font-weight: 800;
+            margin-bottom: 5px;
+            margin-top: 20px;
+        }
+
+        #question {
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: #263345;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-end;
+            margin-bottom: 1.5rem;
+        }
+
+        .card {
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            justify-content: flex-start;
+            width: 200px;
+            height: 280px;
+            background-color: #FFFFFF;
+            border-radius: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+        }
+
+        .blocks-container {
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            justify-content: flex-start;
+        }
+
+        .block {
+            width: 150px;
+            height: 38px;
+            background-color: #4a8ff6;
+            border-radius: 8px;
+            margin-top: 4px; 
+            box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0,0,0,0.1);
+            /* Анімація появи */
+            opacity: 0;
+            transform: scale(0.5) translateY(20px);
+            animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popUp {
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* Стилі для варіантів відповідей (Radio Buttons) */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 450px;
+            margin-bottom: 1rem;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            background: #FFFFFF;
+            padding: 16px 25px;
+            border-radius: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #263345;
+            border: 3px solid transparent;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background-color 0.2s;
+        }
+
+        .option-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+
+        .option-label:active {
+            transform: scale(0.98);
+        }
+
+        .option-label input[type="radio"] {
+            margin-right: 15px;
+            width: 24px;
+            height: 24px;
+            accent-color: #2ecc71;
+            cursor: pointer;
+        }
+
+        .option-label.correct {
+            border-color: #2ecc71;
+            background-color: #e8f8f0;
+        }
+
+        .option-label.incorrect {
+            border-color: #e74c3c;
+            background-color: #fceceb;
+            animation: shake 0.4s;
+        }
+
+        .bottom-area {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        #next-btn {
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.8rem;
+            padding: 12px 45px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 800;
+            box-shadow: 0 6px 0 #27ae60;
+            display: none;
+            transition: transform 0.1s;
+        }
+
+        #next-btn:active {
+            transform: translateY(6px);
+            box-shadow: none;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-8px); }
+        }
+        
+        .finish-screen {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #2ecc71;
+            text-align: center;
+            margin-top: 20vh;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="counter">Завдання 1 з 15</div>
+    <div id="question">Обери правильне твердження</div>
+
+    <div class="game-container" id="game-container">
+        <div class="card" id="card-left">
+            <div class="blocks-container" id="blocks-left"></div>
+        </div>
+        <div class="card" id="card-right">
+            <div class="blocks-container" id="blocks-right"></div>
+        </div>
+    </div>
+
+    <!-- Контейнер для radio buttons -->
+    <div class="options-container" id="options-container"></div>
+
+    <div class="bottom-area">
+        <button id="next-btn" onclick="initGame()">Далі ➔</button>
+    </div>
+
+    <script>
+        let leftCount = 0;
+        let rightCount = 0;
+        let isClickable = true;
+        let correctAnswer = '';
+        
+        let currentQuestion = 0;
+        const totalQuestions = 15;
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function initGame() {
+            currentQuestion++;
+            
+            if (currentQuestion > totalQuestions) {
+                document.body.innerHTML = '<div class="finish-screen">🎉 Молодець!<br>Всі завдання виконано!</div>';
+                return;
+            }
+            
+            document.getElementById('counter').innerText = `Завдання ${currentQuestion} з ${totalQuestions}`;
+            isClickable = true;
+            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('options-container').innerHTML = '';
+
+            // Генеруємо блоки, щоб вони не були однаковими
+            leftCount = getRandomInt(1, 4);
+            rightCount = getRandomInt(1, 4);
+            while (leftCount === rightCount) {
+                rightCount = getRandomInt(1, 4);
+            }
+
+            drawBlocks('blocks-left', leftCount);
+            drawBlocks('blocks-right', rightCount);
+
+            generateOptions();
+        }
+
+        function drawBlocks(id, count) {
+            const container = document.getElementById(id);
+            container.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const block = document.createElement('div');
+                block.className = 'block';
+                // Затримка появи для кожного наступного блоку (анімація один за одним)
+                block.style.animationDelay = `${i * 0.15}s`; 
+                container.appendChild(block);
+            }
+        }
+
+        function generateOptions() {
+            const diff = Math.abs(leftCount - rightCount);
+            let trueStatements = [];
+            
+            // Формуємо список справді правильних тверджень
+            if (leftCount > rightCount) {
+                trueStatements.push(`Зліва на ${diff} більше`);
+                trueStatements.push(`Справа на ${diff} менше`);
+            } else {
+                trueStatements.push(`Зліва на ${diff} менше`);
+                trueStatements.push(`Справа на ${diff} більше`);
+            }
+
+            // Обираємо одне правильне
+            correctAnswer = trueStatements[Math.floor(Math.random() * trueStatements.length)];
+
+            // Формуємо хибні варіанти
+            let falsePool = [];
+            const sides = ['Зліва', 'Справа'];
+            const words = ['більше', 'менше'];
+            
+            for (let s of sides) {
+                for (let w of words) {
+                    for (let d = 1; d <= 4; d++) {
+                        let statement = `${s} на ${d} ${w}`;
+                        if (!trueStatements.includes(statement)) {
+                            falsePool.push(statement);
+                        }
+                    }
+                }
+            }
+
+            // Перемішуємо хибні варіанти і беремо перші 2
+            falsePool.sort(() => Math.random() - 0.5);
+            let options = [correctAnswer, falsePool[0], falsePool[1]];
+
+            // Перемішуємо всі 3 варіанти, щоб правильна відповідь була на випадковому місці
+            options.sort(() => Math.random() - 0.5);
+
+            // Виводимо їх на екран
+            const container = document.getElementById('options-container');
+            options.forEach((opt, index) => {
+                const label = document.createElement('label');
+                label.className = 'option-label';
+                label.id = `label-${index}`;
+                
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'answer';
+                radio.value = opt;
+                radio.onclick = () => checkAnswer(opt, label.id);
+
+                label.appendChild(radio);
+                label.appendChild(document.createTextNode(opt));
+                container.appendChild(label);
+            });
+        }
+
+        function checkAnswer(selectedOption, labelId) {
+            if (!isClickable) return;
+
+            const selectedLabel = document.getElementById(labelId);
+            const allLabels = document.querySelectorAll('.option-label');
+
+            if (selectedOption === correctAnswer) {
+                // Правильна відповідь
+                selectedLabel.classList.add('correct');
+                isClickable = false; // Блокуємо подальші натискання
+                
+                // Деактивуємо інші радіокнопки
+                document.querySelectorAll('input[type="radio"]').forEach(radio => radio.disabled = true);
+                
+                document.getElementById('next-btn').style.display = 'block';
+            } else {
+                // Неправильна відповідь
+                selectedLabel.classList.remove('shake', 'incorrect');
+                void selectedLabel.offsetWidth; // Перезапуск анімації
+                selectedLabel.classList.add('shake', 'incorrect');
+                
+                // Знімаємо позначку radio, щоб дитина могла натиснути ще раз
+                setTimeout(() => {
+                    selectedLabel.classList.remove('incorrect');
+                    const radio = selectedLabel.querySelector('input');
+                    if(radio) radio.checked = false;
+                }, 800);
+            }
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
