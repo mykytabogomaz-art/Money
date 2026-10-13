@@ -1,1 +1,546 @@
 
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Більше чи менше</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&family=Unbounded:wght@500;600;700&display=swap">
+<style>
+/* Макет: одна колонка. Зверху зразок, під ним група дитини. Обидві сітки по 5 колонок,
+   тож предмети стоять одне під одним, і різницю видно очима: зелена рамка = додано, пунктир = прибрано. */
+:root {
+  --bg: #EDF2FB;
+  --surface: #FFFFFF;
+  --surface-2: #F1F5FC;
+  --ink: #1B2547;
+  --muted: #55608A;
+  --line: #D3DCEE;
+  --accent: #3A57D6;
+  --accent-ink: #FFFFFF;
+  --more: #0C8A5E;
+  --more-soft: #DDF5EA;
+  --on-more: #FFFFFF;
+  --less: #C73E25;
+  --less-soft: #FDE6E0;
+  --on-less: #FFFFFF;
+  --sun: #FFBE2E;
+  --warn-soft: #FFF1D6;
+  --warn-line: #D99100;
+  --font-display: 'Unbounded', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-emoji: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1530;
+    --surface: #17214A;
+    --surface-2: #1F2B5E;
+    --ink: #EEF1FF;
+    --muted: #A5B0D8;
+    --line: #2E3B74;
+    --accent: #7C94FF;
+    --accent-ink: #0E1530;
+    --more: #3DDC9E;
+    --more-soft: #0F3B34;
+    --on-more: #0E1530;
+    --less: #FF8A70;
+    --less-soft: #4A2330;
+    --on-less: #0E1530;
+    --sun: #FFC94D;
+    --warn-soft: #4A3B17;
+    --warn-line: #FFC94D;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1530;
+  --surface: #17214A;
+  --surface-2: #1F2B5E;
+  --ink: #EEF1FF;
+  --muted: #A5B0D8;
+  --line: #2E3B74;
+  --accent: #7C94FF;
+  --accent-ink: #0E1530;
+  --more: #3DDC9E;
+  --more-soft: #0F3B34;
+  --on-more: #0E1530;
+  --less: #FF8A70;
+  --less-soft: #4A2330;
+  --on-less: #0E1530;
+  --sun: #FFC94D;
+  --warn-soft: #4A3B17;
+  --warn-line: #FFC94D;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.4;
+  padding-inline: 16px;
+  padding-block: 18px 24px;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font-family: inherit; touch-action: manipulation; }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+.app { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+
+/* Шапка і прогрес */
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px 16px; flex-wrap: wrap; }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
+.stepcount { color: var(--muted); font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
+.progress { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 4px; }
+.seg { height: 8px; border-radius: 4px; background: var(--line); transition: background .25s; }
+.seg.done { background: var(--accent); }
+.seg.current { background: var(--sun); }
+
+.game { display: flex; flex-direction: column; gap: 12px; }
+
+/* Завдання */
+.prompt {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 6;
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface); border: 2px solid var(--line); border-radius: 18px;
+  padding: 14px 16px;
+  box-shadow: 0 6px 14px -6px rgba(14, 21, 48, .25);
+}
+.prompt-text { margin: 0; min-width: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(17px, 5vw, 22px); line-height: 1.25; text-wrap: balance; }
+.prompt.more b { color: var(--more); }
+.prompt.less b { color: var(--less); }
+
+/* Панелі з предметами */
+.panel { background: var(--surface); border: 2px solid var(--line); border-radius: 20px; padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel-head { display: flex; align-items: center; justify-content: flex-end; gap: 12px; min-height: 46px; }
+h2 { margin: 0; font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.readout { text-align: right; line-height: 1.1; min-width: 76px; }
+.stepper .readout { text-align: center; }
+.num { display: block; font-family: var(--font-display); font-weight: 700; font-size: 26px; font-variant-numeric: tabular-nums; }
+.word { display: block; font-size: 13px; font-weight: 700; color: var(--muted); }
+.stepper { display: flex; align-items: center; gap: 8px; }
+.step-btn { width: 46px; height: 46px; border-radius: 50%; border: 0; padding: 0; font-size: 28px; font-weight: 800; line-height: 1; cursor: pointer; display: grid; place-items: center; transition: transform .1s, opacity .15s; }
+.step-btn:active:not(:disabled) { transform: scale(.92); }
+.step-btn.minus { background: var(--less); color: var(--on-less); }
+.step-btn.plus { background: var(--more); color: var(--on-more); }
+.step-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+.game { --cols: 10; }
+.grid { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 3px; container-type: inline-size; }
+.cell {
+  aspect-ratio: 1; display: grid; place-items: center; padding: 0; overflow: hidden;
+  border: 1.5px solid transparent; border-radius: 22%; background: var(--surface-2);
+  font-family: var(--font-emoji); font-size: min(34px, calc(64cqi / var(--cols))); line-height: 1;
+  color: var(--ink);
+}
+.item { cursor: pointer; transition: transform .12s, background .2s, border-color .2s, opacity .18s; }
+.item:hover:not(:disabled) { transform: scale(1.06); }
+.item:disabled { cursor: default; }
+.item.added { background: var(--more-soft); border-color: var(--more); border-width: 2px; }
+.item.enter { animation: pop .3s ease-out; }
+.item.leaving { transform: scale(.2); opacity: 0; pointer-events: none; }
+.ghost { background: transparent; border: 2px dashed var(--less); }
+.ghost span { opacity: .28; }
+.grid.locked .item { cursor: default; }
+@keyframes pop { 0% { transform: scale(.2); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+
+.hint { margin: 0; font-size: 13px; color: var(--muted); font-weight: 700; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.hint .sw { display: inline-block; width: 12px; height: 12px; border-radius: 4px; vertical-align: -1px; margin-right: 5px; }
+.sw.add { background: var(--more-soft); border: 2px solid var(--more); }
+.sw.rem { border: 2px dashed var(--less); }
+
+.panel.shake { animation: shake .4s; }
+@keyframes shake { 0%, 100% { translate: 0; } 20% { translate: -8px; } 40% { translate: 8px; } 60% { translate: -5px; } 80% { translate: 5px; } }
+
+/* Поле для прикладу */
+.eq { gap: 8px; }
+.eq-label { font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.eq-input {
+  width: 100%; min-width: 0; padding: 10px 14px;
+  font-family: var(--font-display); font-weight: 600; font-size: 22px; font-variant-numeric: tabular-nums;
+  border: 2px solid var(--line); border-radius: 14px; background: var(--surface-2); color: var(--ink);
+}
+.eq-input::placeholder { color: var(--muted); opacity: .75; font-family: var(--font-body); font-weight: 700; font-size: 16px; }
+.eq-input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-color: var(--accent); }
+.eq-input.bad { border-color: var(--warn-line); }
+.eq-input.done { border-color: var(--more); background: var(--more-soft); }
+
+/* Нижня панель: відгук і головна кнопка */
+.dock {
+  position: sticky; bottom: 0; z-index: 6;
+  display: flex; flex-direction: column; gap: 8px;
+  padding-block: 10px calc(6px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg); box-shadow: 0 -12px 14px 0 var(--bg);
+}
+.feedback { position: relative; overflow: hidden; border: 2px solid; border-radius: 16px; padding: 10px 14px; }
+.feedback.ok { background: var(--more-soft); border-color: var(--more); }
+.feedback.try { background: var(--warn-soft); border-color: var(--warn-line); }
+.fb-title { font-family: var(--font-display); font-weight: 600; font-size: 15px; }
+.fb-eq { font-family: var(--font-display); font-weight: 700; font-size: 24px; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.fb-text { margin: 2px 0 0; font-size: 15px; font-weight: 700; }
+.conf { position: absolute; top: -8px; width: 8px; height: 12px; border-radius: 2px; pointer-events: none; animation: fall 1.1s ease-in forwards; }
+@keyframes fall { from { transform: translate(0, 0) rotate(0); opacity: 1; } to { transform: translate(var(--dx), 130px) rotate(var(--rot)); opacity: 0; } }
+
+.main {
+  width: 100%; border: 0; border-radius: 16px; padding: 16px 20px; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink);
+  font-family: var(--font-display); font-weight: 600; font-size: 16px; letter-spacing: .02em;
+  transition: filter .15s, transform .1s;
+}
+.main:hover { filter: brightness(1.08); }
+.main:active { transform: translateY(1px); }
+.main.next { background: var(--more); color: var(--on-more); }
+
+/* Результат */
+.result { background: var(--surface); border: 2px solid var(--line); border-radius: 22px; padding: 22px 18px; display: flex; flex-direction: column; gap: 12px; }
+.result h2 { font-family: var(--font-display); font-size: 20px; letter-spacing: -0.01em; text-transform: none; color: var(--ink); font-weight: 700; text-wrap: balance; }
+.score { font-family: var(--font-display); font-weight: 700; font-size: clamp(44px, 14vw, 64px); line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+.score-sub { margin: 0; color: var(--muted); font-weight: 800; }
+.stars { display: flex; flex-wrap: wrap; gap: 2px; }
+.star { font-size: 24px; line-height: 1; color: var(--line); }
+.star.on { color: var(--sun); }
+.result-msg { margin: 0; font-size: 17px; font-weight: 700; text-wrap: balance; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<main class="app">
+  <header class="top">
+    <h1>Більше чи менше</h1>
+    <div class="stepcount" id="stepLabel">Завдання 1 з 15</div>
+  </header>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+
+  <div class="game" id="game">
+    <div class="prompt more" id="prompt">
+      <p class="prompt-text" id="promptText"></p>
+    </div>
+
+    <section class="panel" id="minePanel" aria-label="Група предметів">
+      <div class="panel-head">
+        <div class="stepper">
+          <button type="button" class="step-btn minus" id="btnMinus" aria-label="Прибрати один предмет">−</button>
+          <div class="readout"><span class="num" id="mineNum">3</span><span class="word" id="mineWord"></span></div>
+          <button type="button" class="step-btn plus" id="btnPlus" aria-label="Додати один предмет">+</button>
+        </div>
+      </div>
+      <div class="grid" id="mineGrid"></div>
+    </section>
+
+    <section class="panel eq" aria-labelledby="hEq">
+      <label class="eq-label" id="hEq" for="eqInput">Запиши приклад</label>
+      <input id="eqInput" class="eq-input" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="20" placeholder="Напиши тут">
+    </section>
+
+    <div class="dock">
+      <div class="feedback" id="feedback" role="status" aria-live="polite" hidden>
+        <div class="fb-title" id="fbTitle"></div>
+        <div class="fb-eq" id="fbEq" hidden></div>
+        <p class="fb-text" id="fbText"></p>
+      </div>
+      <button type="button" class="main" id="btnMain">Перевірити</button>
+    </div>
+  </div>
+
+  <section class="result" id="result" hidden>
+    <h2>Усі 15 завдань пройдено!</h2>
+    <div class="score" id="score">0 з 15</div>
+    <p class="score-sub">правильно з першої спроби</p>
+    <div class="stars" id="stars" aria-hidden="true"></div>
+    <p class="result-msg" id="resultMsg"></p>
+    <button type="button" class="main" id="btnAgain">Грати ще раз</button>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var cols = 10; // скільки предметів вміщає один ряд у поточному завданні
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // n — скільки предметів у зразку, op — більше/менше, x — на скільки
+  var TASKS = [
+    { icon: '🍎', forms: ['яблуко', 'яблука', 'яблук'], n: 3, op: 'more', x: 1 },
+    { icon: '⭐', forms: ['зірка', 'зірки', 'зірок'], n: 4, op: 'less', x: 2 },
+    { icon: '🐟', forms: ['рибка', 'рибки', 'рибок'], n: 5, op: 'more', x: 2 },
+    { icon: '⚽', forms: ['м’яч', 'м’ячі', 'м’ячів'], n: 6, op: 'less', x: 1 },
+    { icon: '🌸', forms: ['квітка', 'квітки', 'квіток'], n: 4, op: 'more', x: 3 },
+    { icon: '🚗', forms: ['машина', 'машини', 'машин'], n: 7, op: 'less', x: 3 },
+    { icon: '🍓', forms: ['полуниця', 'полуниці', 'полуниць'], n: 5, op: 'more', x: 4 },
+    { icon: '🐞', forms: ['сонечко', 'сонечка', 'сонечок'], n: 8, op: 'less', x: 2 },
+    { icon: '🎈', forms: ['кулька', 'кульки', 'кульок'], n: 6, op: 'more', x: 3 },
+    { icon: '🍩', forms: ['пончик', 'пончики', 'пончиків'], n: 9, op: 'less', x: 4 },
+    { icon: '🐥', forms: ['курча', 'курчати', 'курчат'], n: 7, op: 'more', x: 3 },
+    { icon: '🍌', forms: ['банан', 'банани', 'бананів'], n: 10, op: 'less', x: 5 },
+    { icon: '🧁', forms: ['тістечко', 'тістечка', 'тістечок'], n: 8, op: 'more', x: 4 },
+    { icon: '🦋', forms: ['метелик', 'метелики', 'метеликів'], n: 12, op: 'less', x: 6 },
+    { icon: '🍬', forms: ['цукерка', 'цукерки', 'цукерок'], n: 9, op: 'more', x: 6 }
+  ];
+  var PRAISE = ['Молодець!', 'Чудово!', 'Правильно!', 'Так тримати!', 'Супер!'];
+
+  function $(id) { return document.getElementById(id); }
+  var el = {
+    stepLabel: $('stepLabel'), progress: $('progress'), game: $('game'),
+    prompt: $('prompt'), promptText: $('promptText'),
+    eqInput: $('eqInput'),
+    minePanel: $('minePanel'), mineGrid: $('mineGrid'), mineNum: $('mineNum'), mineWord: $('mineWord'),
+    btnMinus: $('btnMinus'), btnPlus: $('btnPlus'),
+    feedback: $('feedback'), fbTitle: $('fbTitle'), fbEq: $('fbEq'), fbText: $('fbText'),
+    btnMain: $('btnMain'), result: $('result'), score: $('score'), stars: $('stars'),
+    resultMsg: $('resultMsg'), btnAgain: $('btnAgain')
+  };
+
+  var idx = 0, attempts = 0, locked = false, results = [], items = [], cur = TASKS[0];
+
+  var segs = [];
+  TASKS.forEach(function () {
+    var s = document.createElement('span');
+    s.className = 'seg';
+    el.progress.appendChild(s);
+    segs.push(s);
+  });
+
+  function plural(n, f) {
+    var a = n % 100, b = n % 10;
+    if (a >= 11 && a <= 14) return f[2];
+    if (b === 1) return f[0];
+    if (b >= 2 && b <= 4) return f[1];
+    return f[2];
+  }
+  function target(t) { return t.op === 'more' ? t.n + t.x : t.n - t.x; }
+  function diffWords(d) {
+    if (d === 0) return 'стільки ж, скільки було спочатку';
+    return d > 0 ? 'на ' + d + ' більше, ніж було спочатку' : 'на ' + (-d) + ' менше, ніж було спочатку';
+  }
+  function icon(cls, tag) {
+    var c = document.createElement(tag || 'div');
+    c.className = cls;
+    var s = document.createElement('span');
+    s.textContent = cur.icon;
+    s.setAttribute('aria-hidden', 'true');
+    c.appendChild(s);
+    return c;
+  }
+
+  function makeItem(animate) {
+    var b = icon('cell item' + (animate && !reduce ? ' enter' : ''), 'button');
+    b.type = 'button';
+    b.setAttribute('aria-label', 'Прибрати: ' + cur.forms[0]);
+    b.addEventListener('click', function () { removeNode(b); });
+    b.addEventListener('animationend', function () { b.classList.remove('enter'); });
+    return b;
+  }
+  function clearGhosts() {
+    el.mineGrid.querySelectorAll('.ghost').forEach(function (g) { g.remove(); });
+  }
+
+  function layout() {
+    clearGhosts();
+    var n = items.length;
+    items.forEach(function (b, i) { b.classList.toggle('added', i >= cur.n); });
+    for (var i = n; i < cur.n; i++) {
+      var g = icon('cell ghost');
+      g.setAttribute('aria-hidden', 'true');
+      el.mineGrid.appendChild(g);
+    }
+    el.mineNum.textContent = n;
+    el.mineWord.textContent = plural(n, cur.forms);
+    el.btnMinus.disabled = locked || n === 0;
+    el.btnPlus.disabled = locked || n >= cols;
+  }
+
+  function addOne() {
+    if (locked || items.length >= cols) return;
+    clearGhosts();
+    var b = makeItem(true);
+    el.mineGrid.appendChild(b);
+    items.push(b);
+    layout();
+  }
+  function removeNode(b) {
+    if (locked) return;
+    var i = items.indexOf(b);
+    if (i < 0) return;
+    items.splice(i, 1);
+    b.disabled = true;
+    if (reduce) { b.remove(); }
+    else { b.classList.add('leaving'); setTimeout(function () { b.remove(); }, 180); }
+    layout();
+  }
+  function removeLast() {
+    if (items.length) removeNode(items[items.length - 1]);
+  }
+
+  function setMain(state) {
+    el.btnMain.dataset.state = state;
+    el.btnMain.textContent = state === 'check' ? 'Перевірити' : state === 'next' ? 'Далі →' : 'Подивитись результат';
+    el.btnMain.classList.toggle('next', state !== 'check');
+  }
+  function hideFeedback() { el.feedback.hidden = true; }
+  function showFeedback(kind, title, text, eq) {
+    var f = el.feedback;
+    f.hidden = false;
+    f.className = 'feedback ' + kind;
+    el.fbTitle.textContent = title;
+    el.fbText.textContent = text;
+    el.fbText.hidden = !text;
+    if (eq) { el.fbEq.hidden = false; el.fbEq.textContent = eq; } else { el.fbEq.hidden = true; }
+  }
+  function burst() {
+    if (reduce) return;
+    var cols = ['var(--sun)', 'var(--accent)', 'var(--more)', 'var(--less)'];
+    for (var i = 0; i < 18; i++) {
+      var p = document.createElement('i');
+      p.className = 'conf';
+      p.style.left = (Math.random() * 100) + '%';
+      p.style.background = cols[i % 4];
+      p.style.animationDelay = (Math.random() * 0.2) + 's';
+      p.style.setProperty('--dx', (Math.random() * 60 - 30) + 'px');
+      p.style.setProperty('--rot', (Math.random() * 540 - 270) + 'deg');
+      el.feedback.appendChild(p);
+      (function (q) { setTimeout(function () { q.remove(); }, 1500); })(p);
+    }
+  }
+  function shake() {
+    if (reduce) return;
+    el.minePanel.classList.remove('shake');
+    void el.minePanel.offsetWidth;
+    el.minePanel.classList.add('shake');
+  }
+
+  function showTask() {
+    cur = TASKS[idx];
+    attempts = 0; locked = false; items = [];
+    el.mineGrid.replaceChildren();
+    el.mineGrid.classList.remove('locked');
+    for (var i = 0; i < cur.n; i++) {
+      var b = makeItem(false);
+      el.mineGrid.appendChild(b);
+      items.push(b);
+    }
+    cols = Math.max(10, cur.n + 1, target(cur) + 1);
+    el.game.style.setProperty('--cols', cols);
+    el.eqInput.value = '';
+    el.eqInput.readOnly = false;
+    el.eqInput.className = 'eq-input';
+    var more = cur.op === 'more';
+    el.prompt.className = 'prompt ' + (more ? 'more' : 'less');
+    el.promptText.innerHTML = 'Зроби на <b>' + cur.x + ' ' + (more ? 'більше' : 'менше') + '</b>';
+    el.stepLabel.textContent = 'Завдання ' + (idx + 1) + ' з ' + TASKS.length;
+    segs.forEach(function (s, i) { s.className = 'seg' + (i < idx ? ' done' : i === idx ? ' current' : ''); });
+    hideFeedback();
+    setMain('check');
+    layout();
+  }
+
+  // Приклад: пробіли не важливі, будь-яке тире вважаємо мінусом
+  function normEq(s) {
+    return s.replace(/\s+/g, '').replace(/[−–—‒﹣－]/g, '-').replace(/＝/g, '=').replace(/＋/g, '+');
+  }
+
+  function check() {
+    if (locked) return;
+    var goal = target(cur), n = items.length, more = cur.op === 'more';
+    var word = more ? 'більше' : 'менше';
+
+    if (n !== goal) {
+      attempts++;
+      showFeedback(
+        'try',
+        'Спробуй ще раз',
+        'Зараз у тебе ' + diffWords(n - cur.n) + '. А треба на ' + cur.x + ' ' + word + '.'
+      );
+      shake();
+      return;
+    }
+
+    var typed = normEq(el.eqInput.value);
+    if (!typed) {
+      showFeedback(
+        'try',
+        'Групу зроблено правильно!',
+        'Тепер запиши приклад у полі нижче: скільки було, плюс або мінус, на скільки, а після «=» скільки стало.'
+      );
+      el.eqInput.focus();
+      return;
+    }
+    attempts++;
+    if (typed !== cur.n + (more ? '+' : '-') + cur.x + '=' + goal) {
+      el.eqInput.classList.add('bad');
+      showFeedback(
+        'try',
+        'Перевір приклад',
+        'Групу зроблено правильно, а в прикладі помилка. Спершу скільки було, потім знак, потім на скільки, а після «=» скільки стало.'
+      );
+      el.eqInput.focus();
+      return;
+    }
+
+    locked = true;
+    results[idx] = attempts === 1;
+    el.mineGrid.classList.add('locked');
+    items.forEach(function (b) { b.disabled = true; });
+    el.eqInput.readOnly = true;
+    el.eqInput.className = 'eq-input done';
+    layout();
+    showFeedback('ok', PRAISE[Math.floor(Math.random() * PRAISE.length)], '');
+    burst();
+    setMain(idx === TASKS.length - 1 ? 'finish' : 'next');
+  }
+
+  function finish() {
+    var score = results.filter(Boolean).length;
+    segs.forEach(function (s) { s.className = 'seg done'; });
+    el.stepLabel.textContent = 'Готово!';
+    el.game.hidden = true;
+    el.result.hidden = false;
+    el.score.textContent = score + ' з ' + TASKS.length;
+    el.stars.replaceChildren();
+    results.forEach(function (r) {
+      var s = document.createElement('span');
+      s.className = 'star' + (r ? ' on' : '');
+      s.textContent = '★';
+      el.stars.appendChild(s);
+    });
+    el.resultMsg.textContent = score >= 13
+      ? 'Ти справжній чемпіон з порівнянь!'
+      : score >= 9
+        ? 'Чудовий результат! Зіграй ще раз, і буде ще краще.'
+        : 'Гарна спроба! З кожною грою стає легше.';
+    window.scrollTo({ top: 0 });
+  }
+
+  function restart() {
+    idx = 0; results = [];
+    el.result.hidden = true;
+    el.game.hidden = false;
+    showTask();
+    window.scrollTo({ top: 0 });
+  }
+
+  el.btnPlus.addEventListener('click', addOne);
+  el.btnMinus.addEventListener('click', removeLast);
+  el.btnAgain.addEventListener('click', restart);
+  el.eqInput.addEventListener('input', function () { el.eqInput.classList.remove('bad'); });
+  el.eqInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (el.btnMain.dataset.state === 'check') check();
+    }
+  });
+  el.btnMain.addEventListener('click', function () {
+    var st = el.btnMain.dataset.state;
+    if (st === 'check') check();
+    else if (st === 'next') { idx++; showTask(); window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); }
+    else finish();
+  });
+
+  showTask();
+})();
+</script>
+
+</body></html>
