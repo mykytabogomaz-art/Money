@@ -18,21 +18,27 @@
             touch-action: manipulation;
         }
 
-        #counter {
-            font-size: 1.2rem;
-            color: #64748B;
-            font-weight: 800;
-            margin-bottom: 5px;
+        /* Контейнер для зірочок */
+        #star-container {
+            display: flex;
+            gap: 8px;
             margin-top: 20px;
+            margin-bottom: 40px;
+            height: 40px;
+            align-items: center;
         }
 
-        #question {
-            font-size: 2.8rem;
-            font-weight: 900;
-            color: #263345;
-            margin-bottom: 1.5rem;
-            text-align: center;
-            letter-spacing: 0.5px;
+        .star {
+            font-size: 2.5rem;
+            /* Сіра, напівпрозора зірка за замовчуванням */
+            filter: grayscale(100%) opacity(0.25); 
+            transition: filter 0.4s ease, transform 0.4s ease, opacity 0.4s ease;
+        }
+
+        .star.gold {
+            /* Золота, яскрава зірка */
+            filter: grayscale(0%) opacity(1);
+            transform: scale(1.15);
         }
 
         .game-container {
@@ -82,7 +88,6 @@
             justify-content: flex-start;
         }
 
-        /* Надійний запис анімації для всіх браузерів */
         .block {
             width: 150px;
             height: 38px;
@@ -204,18 +209,19 @@
         }
         
         .finish-screen {
-            font-size: 3rem;
+            font-size: 3.5rem;
             font-weight: 900;
             color: #2ecc71;
             text-align: center;
             margin-top: 20vh;
+            line-height: 1.4;
         }
     </style>
 </head>
 <body>
 
-    <div id="counter">Завдання 1 з 15</div>
-    <div id="question">Побудуй правильну відповідь</div>
+    <!-- Контейнер для 10 зірочок -->
+    <div id="star-container"></div>
 
     <div class="game-container" id="game-container">
         <!-- Рамка, що виділяє однакову кількість -->
@@ -259,22 +265,36 @@
         let correctNum = 0;
         let correctWord = '';
         
-        let currentQuestion = 0;
-        const totalQuestions = 15;
+        // Логіка зірочок
+        let currentStars = 0;
+        const maxStars = 10;
 
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
+        function renderStars() {
+            const container = document.getElementById('star-container');
+            container.innerHTML = '';
+            for (let i = 0; i < maxStars; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                if (i < currentStars) {
+                    star.classList.add('gold');
+                }
+                star.innerText = '⭐';
+                container.appendChild(star);
+            }
+        }
+
         function initGame() {
-            currentQuestion++;
-            
-            if (currentQuestion > totalQuestions) {
-                document.body.innerHTML = '<div class="finish-screen">🎉 Молодець!<br>Всі завдання виконано!</div>';
+            // Перевірка на завершення гри
+            if (currentStars >= maxStars) {
+                document.body.innerHTML = '<div class="finish-screen">🎉 Супер!<br>Ти зібрав усі 10 зірок! 🌟</div>';
                 return;
             }
             
-            document.getElementById('counter').innerText = `Завдання ${currentQuestion} з ${totalQuestions}`;
+            renderStars();
             isClickable = true;
             
             document.getElementById('next-btn').style.display = 'none';
@@ -335,15 +355,24 @@
             const selectedWord = document.getElementById('word-select').value;
             const answerRow = document.getElementById('answer-row');
 
+            // Якщо дитина ще не обрала обидва значення
             if (selectedNum === '?' || selectedWord === '?') {
+                isClickable = false; // Блокуємо на час анімації
                 answerRow.classList.remove('shake', 'incorrect');
                 void answerRow.offsetWidth;
                 answerRow.classList.add('shake', 'incorrect');
-                setTimeout(() => answerRow.classList.remove('incorrect'), 800);
+                setTimeout(() => {
+                    answerRow.classList.remove('incorrect');
+                    isClickable = true;
+                }, 800);
                 return;
             }
 
             if (parseInt(selectedNum) === correctNum && selectedWord === correctWord) {
+                // Правильна відповідь
+                currentStars++;
+                renderStars();
+
                 document.getElementById('num-select').disabled = true;
                 document.getElementById('word-select').disabled = true;
                 
@@ -351,12 +380,19 @@
                 document.getElementById('next-btn').style.display = 'block';
                 isClickable = false;
             } else {
+                // Неправильна відповідь
+                isClickable = false; // Блокуємо, щоб не втрачати зірки через множинні кліки під час анімації
+                
+                currentStars = Math.max(0, currentStars - 1);
+                renderStars();
+
                 answerRow.classList.remove('shake', 'incorrect');
                 void answerRow.offsetWidth;
                 answerRow.classList.add('shake', 'incorrect');
                 
                 setTimeout(() => {
                     answerRow.classList.remove('incorrect');
+                    isClickable = true;
                 }, 800);
             }
         }
