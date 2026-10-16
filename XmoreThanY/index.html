@@ -1,1 +1,476 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Чого більше чи менше</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&family=Unbounded:wght@500;600;700&display=swap">
+<style>
+/* Макет: одна колонка. Зверху питання, під ним два блоки з предметами (кожен в один ряд, однакового розміру,
+   щоб кількість можна було порівняти поглядом), потім поле для відповіді і кнопка «Перевірити». */
+:root {
+  --bg: #EDF2FB;
+  --surface: #FFFFFF;
+  --surface-2: #F1F5FC;
+  --ink: #1B2547;
+  --muted: #55608A;
+  --line: #D3DCEE;
+  --accent: #3A57D6;
+  --accent-ink: #FFFFFF;
+  --more: #0C8A5E;
+  --more-soft: #DDF5EA;
+  --on-more: #FFFFFF;
+  --less: #C73E25;
+  --sun: #FFBE2E;
+  --warn-soft: #FFF1D6;
+  --warn-line: #D99100;
+  --font-display: 'Unbounded', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-emoji: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1530;
+    --surface: #17214A;
+    --surface-2: #1F2B5E;
+    --ink: #EEF1FF;
+    --muted: #A5B0D8;
+    --line: #2E3B74;
+    --accent: #7C94FF;
+    --accent-ink: #0E1530;
+    --more: #3DDC9E;
+    --more-soft: #0F3B34;
+    --on-more: #0E1530;
+    --less: #FF8A70;
+    --sun: #FFC94D;
+    --warn-soft: #4A3B17;
+    --warn-line: #FFC94D;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1530;
+  --surface: #17214A;
+  --surface-2: #1F2B5E;
+  --ink: #EEF1FF;
+  --muted: #A5B0D8;
+  --line: #2E3B74;
+  --accent: #7C94FF;
+  --accent-ink: #0E1530;
+  --more: #3DDC9E;
+  --more-soft: #0F3B34;
+  --on-more: #0E1530;
+  --less: #FF8A70;
+  --sun: #FFC94D;
+  --warn-soft: #4A3B17;
+  --warn-line: #FFC94D;
+  color-scheme: dark;
+}
 
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.4;
+  padding-inline: 16px;
+  padding-block: 18px 24px;
+  -webkit-tap-highlight-color: transparent;
+}
+button, input { font-family: inherit; touch-action: manipulation; }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+.app { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+
+/* Шапка і прогрес */
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px 16px; flex-wrap: wrap; }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
+.stepcount { color: var(--muted); font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
+.progress { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 4px; }
+.seg { height: 8px; border-radius: 4px; background: var(--line); transition: background .25s; }
+.seg.done { background: var(--accent); }
+.seg.current { background: var(--sun); }
+
+.game { --cols: 10; display: flex; flex-direction: column; gap: 12px; }
+
+/* Питання */
+.prompt {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 6;
+  background: var(--surface); border: 2px solid var(--line); border-radius: 18px;
+  padding: 14px 16px;
+  box-shadow: 0 6px 14px -6px rgba(14, 21, 48, .25);
+}
+.prompt-text { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 7vw, 30px); line-height: 1.2; }
+.prompt-text.more b { color: var(--more); }
+.prompt-text.less b { color: var(--less); }
+
+/* Блоки з предметами */
+.panel { background: var(--surface); border: 2px solid var(--line); border-radius: 20px; padding: 14px; min-width: 0; }
+.grid { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 3px; container-type: inline-size; }
+.cell {
+  aspect-ratio: 1; display: grid; place-items: center; overflow: hidden;
+  border-radius: 22%; background: var(--surface-2);
+  font-family: var(--font-emoji); font-size: min(34px, calc(64cqi / var(--cols))); line-height: 1;
+  color: var(--ink);
+}
+.cell.enter { animation: pop .3s ease-out backwards; }
+@keyframes pop { 0% { transform: scale(.2); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+
+.panel.shake { animation: shake .4s; }
+@keyframes shake { 0%, 100% { translate: 0; } 20% { translate: -8px; } 40% { translate: 8px; } 60% { translate: -5px; } 80% { translate: 5px; } }
+
+/* Відповідь */
+.answer {
+  width: 100%; min-width: 0; padding: 12px 14px;
+  font-family: var(--font-body); font-weight: 800; font-size: 19px;
+  border: 2px solid var(--line); border-radius: 14px; background: var(--surface-2); color: var(--ink);
+}
+.answer::placeholder { color: var(--muted); opacity: .75; font-weight: 700; font-size: 16px; }
+.answer:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-color: var(--accent); }
+.answer.bad { border-color: var(--warn-line); }
+.answer.done { border-color: var(--more); background: var(--more-soft); }
+
+/* Пояснення під полем */
+#askPanel { display: flex; flex-direction: column; gap: 12px; }
+.howto { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+.howto-title { font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.howto p { margin: 0; font-size: 15px; font-weight: 700; }
+.howto-rule i { font-style: normal; color: var(--accent); font-weight: 800; padding-inline: 2px; }
+.howto-example { color: var(--muted); }
+.howto-example b { color: var(--ink); font-weight: 800; }
+
+/* Нижня панель: відгук і головна кнопка */
+.dock {
+  position: sticky; bottom: 0; z-index: 6;
+  display: flex; flex-direction: column; gap: 8px;
+  padding-block: 10px calc(6px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg); box-shadow: 0 -12px 14px 0 var(--bg);
+}
+.feedback { position: relative; overflow: hidden; border: 2px solid; border-radius: 16px; padding: 10px 14px; }
+.feedback.ok { background: var(--more-soft); border-color: var(--more); }
+.feedback.try { background: var(--warn-soft); border-color: var(--warn-line); }
+.fb-title { font-family: var(--font-display); font-weight: 600; font-size: 15px; }
+.fb-text { margin: 2px 0 0; font-size: 15px; font-weight: 700; }
+.conf { position: absolute; top: -8px; width: 8px; height: 12px; border-radius: 2px; pointer-events: none; animation: fall 1.1s ease-in forwards; }
+@keyframes fall { from { transform: translate(0, 0) rotate(0); opacity: 1; } to { transform: translate(var(--dx), 130px) rotate(var(--rot)); opacity: 0; } }
+
+.main {
+  width: 100%; border: 0; border-radius: 16px; padding: 16px 20px; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink);
+  font-family: var(--font-display); font-weight: 600; font-size: 16px; letter-spacing: .02em;
+  transition: filter .15s, transform .1s;
+}
+.main:hover { filter: brightness(1.08); }
+.main:active { transform: translateY(1px); }
+.main.next { background: var(--more); color: var(--on-more); }
+
+/* Результат */
+.result { background: var(--surface); border: 2px solid var(--line); border-radius: 22px; padding: 22px 18px; display: flex; flex-direction: column; gap: 12px; }
+.result h2 { margin: 0; font-family: var(--font-display); font-size: 20px; letter-spacing: -0.01em; color: var(--ink); font-weight: 700; text-wrap: balance; }
+.score { font-family: var(--font-display); font-weight: 700; font-size: clamp(44px, 14vw, 64px); line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+.score-sub { margin: 0; color: var(--muted); font-weight: 800; }
+.stars { display: flex; flex-wrap: wrap; gap: 2px; }
+.star { font-size: 24px; line-height: 1; color: var(--line); }
+.star.on { color: var(--sun); }
+.result-msg { margin: 0; font-size: 17px; font-weight: 700; text-wrap: balance; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<main class="app">
+  <header class="top">
+    <h1>Чого більше чи менше</h1>
+    <div class="stepcount" id="stepLabel">Завдання 1 з 15</div>
+  </header>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+
+  <div class="game" id="game">
+    <div class="prompt">
+      <p class="prompt-text more" id="promptText">Чого <b>більше</b>?</p>
+    </div>
+
+    <section class="panel" aria-label="Перший блок">
+      <div class="grid" id="gridA" aria-hidden="true"></div>
+    </section>
+
+    <section class="panel" aria-label="Другий блок">
+      <div class="grid" id="gridB" aria-hidden="true"></div>
+    </section>
+
+    <section class="panel" id="askPanel">
+      <input id="answer" class="answer" type="text" inputmode="text" autocomplete="off" autocapitalize="sentences" spellcheck="false" maxlength="60" placeholder="Напиши відповідь" aria-label="Твоя відповідь" aria-describedby="howto">
+      <div class="howto" id="howto">
+        <div class="howto-title">Як писати відповідь</div>
+        <p class="howto-rule">чого <i>+</i> на скільки <i>+</i> більше чи менше <i>+</i> кома <i>+</i> ніж <i>+</i> чого</p>
+        <p class="howto-example">Наприклад: <b>Грибів на 2 більше, ніж ягід</b></p>
+      </div>
+    </section>
+
+    <div class="dock">
+      <div class="feedback" id="feedback" role="status" aria-live="polite" hidden>
+        <div class="fb-title" id="fbTitle"></div>
+        <p class="fb-text" id="fbText"></p>
+      </div>
+      <button type="button" class="main" id="btnMain">Перевірити</button>
+    </div>
+  </div>
+
+  <section class="result" id="result" hidden>
+    <h2>Усі 15 завдань пройдено!</h2>
+    <div class="score" id="score">0 з 15</div>
+    <p class="score-sub">правильно з першої спроби</p>
+    <div class="stars" id="stars" aria-hidden="true"></div>
+    <p class="result-msg" id="resultMsg"></p>
+    <button type="button" class="main" id="btnAgain">Грати ще раз</button>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // gen — родовий відмінок множини, stems — за чим розпізнаємо слово у відповіді дитини
+  var OBJ = {
+    tri:   { icon: '🔺', gen: 'трикутників', stems: ['трикутник'] },
+    circ:  { icon: '🔴', gen: 'кіл',         stems: ['кіл', 'коло', 'кола', 'круг'] },
+    sq:    { icon: '🟦', gen: 'квадратів',   stems: ['квадрат'] },
+    star:  { icon: '⭐', gen: 'зірок',       stems: ['зірок', 'зірк', 'зірч'] },
+    heart: { icon: '❤️', gen: 'сердець',     stems: ['серц', 'сердеч', 'сердец'] },
+    apple: { icon: '🍎', gen: 'яблук',       stems: ['яблук'] },
+    pear:  { icon: '🍐', gen: 'груш',        stems: ['груш'] },
+    fish:  { icon: '🐟', gen: 'рибок',       stems: ['риб'] },
+    bird:  { icon: '🐦', gen: 'птахів',      stems: ['птах', 'пташ', 'птиц'] },
+    balloon: { icon: '🎈', gen: 'кульок',    stems: ['куль'] },
+    ball:  { icon: '⚽', gen: 'м’ячів',      stems: ['мяч'] },
+    flower: { icon: '🌸', gen: 'квіток',     stems: ['квіт'] },
+    butterfly: { icon: '🦋', gen: 'метеликів', stems: ['метел'] },
+    car:   { icon: '🚗', gen: 'машин',       stems: ['машин', 'авто'] },
+    bug:   { icon: '🐞', gen: 'сонечок',     stems: ['сонеч'] },
+    cake:  { icon: '🧁', gen: 'тістечок',    stems: ['тістеч', 'торт'] },
+    candy: { icon: '🍬', gen: 'цукерок',     stems: ['цукер'] }
+  };
+
+  // a, b — що в першому і другому блоці; na, nb — скільки; ask — що питаємо (more/less)
+  var TASKS = [
+    { a: 'tri',   na: 5,  b: 'circ',      nb: 4,  ask: 'more' },
+    { a: 'apple', na: 3,  b: 'pear',      nb: 6,  ask: 'less' },
+    { a: 'sq',    na: 6,  b: 'star',      nb: 4,  ask: 'more' },
+    { a: 'fish',  na: 2,  b: 'bird',      nb: 5,  ask: 'more' },
+    { a: 'heart', na: 7,  b: 'circ',      nb: 4,  ask: 'less' },
+    { a: 'balloon', na: 3, b: 'ball',     nb: 8,  ask: 'less' },
+    { a: 'flower', na: 6, b: 'butterfly', nb: 9,  ask: 'more' },
+    { a: 'car',   na: 8,  b: 'bug',       nb: 5,  ask: 'less' },
+    { a: 'tri',   na: 4,  b: 'sq',        nb: 9,  ask: 'less' },
+    { a: 'star',  na: 10, b: 'heart',     nb: 6,  ask: 'more' },
+    { a: 'cake',  na: 3,  b: 'candy',     nb: 10, ask: 'more' },
+    { a: 'pear',  na: 9,  b: 'fish',      nb: 5,  ask: 'less' },
+    { a: 'bird',  na: 6,  b: 'flower',    nb: 10, ask: 'less' },
+    { a: 'ball',  na: 9,  b: 'balloon',   nb: 3,  ask: 'more' },
+    { a: 'bug',   na: 7,  b: 'cake',      nb: 2,  ask: 'less' }
+  ];
+  var PRAISE = ['Молодець!', 'Чудово!', 'Правильно!', 'Так тримати!', 'Супер!'];
+
+  /*JUDGE*/
+  function rightSide(t) { return (t.ask === 'more') === (t.na > t.nb) ? 'a' : 'b'; }
+  function diffOf(t) { return Math.abs(t.na - t.nb); }
+  function hasStem(s, key) {
+    return OBJ[key].stems.some(function (st) { return s.indexOf(st) >= 0; });
+  }
+  // Очікуємо речення: «чого» на «скільки» більше/менше, ніж «чого».
+  // Повертає: ok, empty, no-nizh, wrong-object, no-object, no-second, no-number, bad-number, no-dir, bad-dir, no-comma
+  function judge(raw, t) {
+    var s = String(raw).toLowerCase().replace(/[’ʼ'`]/g, '').replace(/\s+/g, ' ').trim();
+    if (!s) return 'empty';
+    var i = s.indexOf('ніж');
+    if (i < 0) return 'no-nizh';
+    var before = s.slice(0, i), after = s.slice(i + 3);
+    var side = rightSide(t), other = side === 'a' ? 'b' : 'a';
+    if (hasStem(before, t[other]) || hasStem(after, t[side])) return 'wrong-object';
+    if (!hasStem(before, t[side])) return 'no-object';
+    if (!hasStem(after, t[other])) return 'no-second';
+    var nums = s.match(/\d+/g) || [];
+    if (!nums.length) return 'no-number';
+    if (nums.length > 1 || parseInt(nums[0], 10) !== diffOf(t)) return 'bad-number';
+    var hasMore = before.indexOf('більше') >= 0, hasLess = before.indexOf('менше') >= 0;
+    if (!hasMore && !hasLess) return 'no-dir';
+    if (hasMore && hasLess) return 'bad-dir';
+    if ((hasMore && t.ask !== 'more') || (hasLess && t.ask !== 'less')) return 'bad-dir';
+    if (before.replace(/\s+$/, '').slice(-1) !== ',') return 'no-comma';
+    return 'ok';
+  }
+  /*END*/
+
+  function $(id) { return document.getElementById(id); }
+  var el = {
+    stepLabel: $('stepLabel'), progress: $('progress'), game: $('game'),
+    promptText: $('promptText'), gridA: $('gridA'), gridB: $('gridB'),
+    askPanel: $('askPanel'), answer: $('answer'),
+    feedback: $('feedback'), fbTitle: $('fbTitle'), fbText: $('fbText'),
+    btnMain: $('btnMain'), result: $('result'), score: $('score'), stars: $('stars'),
+    resultMsg: $('resultMsg'), btnAgain: $('btnAgain')
+  };
+
+  var idx = 0, attempts = 0, locked = false, results = [], cur = TASKS[0];
+
+  var segs = [];
+  TASKS.forEach(function () {
+    var s = document.createElement('span');
+    s.className = 'seg';
+    el.progress.appendChild(s);
+    segs.push(s);
+  });
+
+  function fill(grid, key, n) {
+    grid.replaceChildren();
+    for (var i = 0; i < n; i++) {
+      var c = document.createElement('div');
+      c.className = 'cell' + (reduce ? '' : ' enter');
+      if (!reduce) c.style.animationDelay = (i * 25) + 'ms';
+      var s = document.createElement('span');
+      s.textContent = OBJ[key].icon;
+      c.appendChild(s);
+      grid.appendChild(c);
+    }
+  }
+
+  function setMain(state) {
+    el.btnMain.dataset.state = state;
+    el.btnMain.textContent = state === 'check' ? 'Перевірити' : state === 'next' ? 'Далі →' : 'Подивитись результат';
+    el.btnMain.classList.toggle('next', state !== 'check');
+  }
+  function hideFeedback() { el.feedback.hidden = true; }
+  function showFeedback(kind, title, text) {
+    var f = el.feedback;
+    f.hidden = false;
+    f.className = 'feedback ' + kind;
+    el.fbTitle.textContent = title;
+    el.fbText.textContent = text;
+    el.fbText.hidden = !text;
+  }
+  function burst() {
+    if (reduce) return;
+    var colors = ['var(--sun)', 'var(--accent)', 'var(--more)', 'var(--less)'];
+    for (var i = 0; i < 18; i++) {
+      var p = document.createElement('i');
+      p.className = 'conf';
+      p.style.left = (Math.random() * 100) + '%';
+      p.style.background = colors[i % 4];
+      p.style.animationDelay = (Math.random() * 0.2) + 's';
+      p.style.setProperty('--dx', (Math.random() * 60 - 30) + 'px');
+      p.style.setProperty('--rot', (Math.random() * 540 - 270) + 'deg');
+      el.feedback.appendChild(p);
+      (function (q) { setTimeout(function () { q.remove(); }, 1500); })(p);
+    }
+  }
+  function shake(node) {
+    if (reduce) return;
+    node.classList.remove('shake');
+    void node.offsetWidth;
+    node.classList.add('shake');
+  }
+
+  function showTask() {
+    cur = TASKS[idx];
+    attempts = 0; locked = false;
+    fill(el.gridA, cur.a, cur.na);
+    fill(el.gridB, cur.b, cur.nb);
+    var more = cur.ask === 'more';
+    el.promptText.className = 'prompt-text ' + (more ? 'more' : 'less');
+    el.promptText.innerHTML = 'Чого <b>' + (more ? 'більше' : 'менше') + '</b>?';
+    el.answer.value = '';
+    el.answer.readOnly = false;
+    el.answer.className = 'answer';
+    el.stepLabel.textContent = 'Завдання ' + (idx + 1) + ' з ' + TASKS.length;
+    segs.forEach(function (s, i) { s.className = 'seg' + (i < idx ? ' done' : i === idx ? ' current' : ''); });
+    hideFeedback();
+    setMain('check');
+  }
+
+  function check() {
+    if (locked) return;
+    var word = cur.ask === 'more' ? 'більше' : 'менше';
+    var code = judge(el.answer.value, cur);
+
+    if (code === 'empty') {
+      showFeedback('try', 'Напиши відповідь', 'Подивись, як треба писати, під полем.');
+      el.answer.focus();
+      return;
+    }
+    attempts++;
+    if (code === 'ok') {
+      locked = true;
+      results[idx] = attempts === 1;
+      el.answer.readOnly = true;
+      el.answer.className = 'answer done';
+      showFeedback('ok', PRAISE[Math.floor(Math.random() * PRAISE.length)], '');
+      burst();
+      setMain(idx === TASKS.length - 1 ? 'finish' : 'next');
+      return;
+    }
+    el.answer.classList.add('bad');
+    shake(el.askPanel);
+    if (code === 'no-nizh') showFeedback('try', 'Допиши до кінця', 'У відповіді має бути слово «ніж». Подивись, як писати, під полем.');
+    else if (code === 'no-comma') showFeedback('try', 'Майже готово', 'Постав кому перед словом «ніж».');
+    else if (code === 'no-object') showFeedback('try', 'Чого саме?', 'Почни з того, яких предметів ' + word + '.');
+    else if (code === 'wrong-object') showFeedback('try', 'Спробуй ще раз', 'Порахуй предмети в обох блоках і подивись, яких ' + word + '. Їх пиши першими.');
+    else if (code === 'no-second') showFeedback('try', 'З чим порівнюєш?', 'Після слова «ніж» напиши, яких предметів у другому блоці.');
+    else if (code === 'no-number') showFeedback('try', 'А на скільки?', 'Допиши цифрою, на скільки ' + word + '.');
+    else if (code === 'bad-number') showFeedback('try', 'Порахуй ще раз', 'Подивись уважно, на скільки ' + word + '.');
+    else if (code === 'no-dir') showFeedback('try', 'Яке слово?', 'Напиши слово «більше» або «менше».');
+    else showFeedback('try', 'Перевір слово', 'У питанні було слово «' + word + '». Подивись на нього.');
+    el.answer.focus();
+  }
+
+  function finish() {
+    var score = results.filter(Boolean).length;
+    segs.forEach(function (s) { s.className = 'seg done'; });
+    el.stepLabel.textContent = 'Готово!';
+    el.game.hidden = true;
+    el.result.hidden = false;
+    el.score.textContent = score + ' з ' + TASKS.length;
+    el.stars.replaceChildren();
+    results.forEach(function (r) {
+      var s = document.createElement('span');
+      s.className = 'star' + (r ? ' on' : '');
+      s.textContent = '★';
+      el.stars.appendChild(s);
+    });
+    el.resultMsg.textContent = score >= 13
+      ? 'Ти справжній чемпіон з порівнянь!'
+      : score >= 9
+        ? 'Чудовий результат! Зіграй ще раз, і буде ще краще.'
+        : 'Гарна спроба! З кожною грою стає легше.';
+    window.scrollTo({ top: 0 });
+  }
+
+  function restart() {
+    idx = 0; results = [];
+    el.result.hidden = true;
+    el.game.hidden = false;
+    showTask();
+    window.scrollTo({ top: 0 });
+  }
+
+  el.btnAgain.addEventListener('click', restart);
+  el.answer.addEventListener('input', function () { el.answer.classList.remove('bad'); });
+  el.answer.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (el.btnMain.dataset.state === 'check') check();
+    }
+  });
+  el.btnMain.addEventListener('click', function () {
+    var st = el.btnMain.dataset.state;
+    if (st === 'check') check();
+    else if (st === 'next') { idx++; showTask(); window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); }
+    else finish();
+  });
+
+  showTask();
+})();
+</script>
+
+</body></html>
