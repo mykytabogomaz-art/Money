@@ -112,6 +112,7 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1
   font-family: var(--font-emoji); font-size: min(34px, calc(64cqi / var(--cols))); line-height: 1;
   color: var(--ink);
 }
+.cell.empty { background: transparent; border: 2px dashed var(--muted); opacity: .45; }
 .cell.enter { animation: pop .3s ease-out backwards; }
 @keyframes pop { 0% { transform: scale(.2); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
 
@@ -323,15 +324,20 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1
     segs.push(s);
   });
 
-  function fill(grid, key, n) {
+  // n предметів, решта до total — порожні рамки, щоб в обох блоках було однакова кількість клітинок
+  function fill(grid, key, n, total) {
     grid.replaceChildren();
-    for (var i = 0; i < n; i++) {
+    for (var i = 0; i < total; i++) {
       var c = document.createElement('div');
-      c.className = 'cell' + (reduce ? '' : ' enter');
-      if (!reduce) c.style.animationDelay = (i * 25) + 'ms';
-      var s = document.createElement('span');
-      s.textContent = OBJ[key].icon;
-      c.appendChild(s);
+      if (i < n) {
+        c.className = 'cell' + (reduce ? '' : ' enter');
+        if (!reduce) c.style.animationDelay = (i * 25) + 'ms';
+        var s = document.createElement('span');
+        s.textContent = OBJ[key].icon;
+        c.appendChild(s);
+      } else {
+        c.className = 'cell empty';
+      }
       grid.appendChild(c);
     }
   }
@@ -375,8 +381,9 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1
   function showTask() {
     cur = TASKS[idx];
     attempts = 0; locked = false;
-    fill(el.gridA, cur.a, cur.na);
-    fill(el.gridB, cur.b, cur.nb);
+    var total = Math.max(cur.na, cur.nb);
+    fill(el.gridA, cur.a, cur.na, total);
+    fill(el.gridB, cur.b, cur.nb, total);
     var more = cur.ask === 'more';
     el.promptText.className = 'prompt-text ' + (more ? 'more' : 'less');
     el.promptText.innerHTML = 'Чого <b>' + (more ? 'більше' : 'менше') + '</b>?';
