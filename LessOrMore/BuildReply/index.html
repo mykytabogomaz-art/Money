@@ -19,34 +19,31 @@
         }
 
         /* Контейнер для зірочок */
-        #star-container {
+        .stars-container {
             display: flex;
             gap: 8px;
-            margin-top: 20px;
-            margin-bottom: 40px;
-            height: 40px;
-            align-items: center;
+            margin-bottom: 2rem;
+            margin-top: 1rem;
         }
 
         .star {
-            font-size: 2.5rem;
-            /* Сіра, напівпрозора зірка за замовчуванням */
-            filter: grayscale(100%) opacity(0.25); 
-            transition: filter 0.4s ease, transform 0.4s ease, opacity 0.4s ease;
+            font-size: 3.5rem;
+            color: #cbd5e1; /* Сірий колір для порожньої зірки */
+            transition: color 0.3s, transform 0.3s;
         }
 
         .star.gold {
-            /* Золота, яскрава зірка */
-            filter: grayscale(0%) opacity(1);
-            transform: scale(1.15);
+            color: #fbbf24; /* Золотий колір */
+            text-shadow: 0 2px 5px rgba(251, 191, 36, 0.4);
+            transform: scale(1.1);
         }
 
-        .game-container {
+        .cards-area {
             position: relative;
             display: flex;
             gap: 30px;
             align-items: flex-end;
-            margin-bottom: 2rem;
+            margin-bottom: 15px; /* Відступ до полів вводу */
             width: 430px; 
         }
 
@@ -99,14 +96,46 @@
         }
 
         @keyframes popUp {
-            0% {
-                opacity: 0;
-                transform: scale(0.5) translateY(20px);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
+            0% { opacity: 0; transform: scale(0.5) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Поля вводу "зліва" та "справа" під картками */
+        .inputs-area {
+            display: flex;
+            gap: 30px;
+            width: 430px;
+            margin-bottom: 2rem;
+        }
+
+        .side-input {
+            width: 200px;
+            box-sizing: border-box;
+            padding: 10px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 800;
+            text-align: center;
+            border: 3px solid #e2e8f0;
+            border-radius: 12px;
+            outline: none;
+            color: #263345;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        .side-input:focus {
+            border-color: #4a8ff6;
+        }
+
+        .side-input:disabled {
+            background-color: #e8f8f0; /* Зеленуватий фон як підтвердження */
+            border-color: #2ecc71;
+            color: #2ecc71;
+        }
+
+        .side-input.error {
+            border-color: #e74c3c;
+            animation: shake 0.4s;
         }
 
         /* Рядок конструювання відповіді */
@@ -120,7 +149,7 @@
             border-radius: 20px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.06);
             border: 2px solid transparent;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
             flex-wrap: wrap;
             max-width: 90%;
             transition: border-color 0.2s;
@@ -163,10 +192,25 @@
 
         select:disabled {
             opacity: 1;
+            background-color: #f1f5f9;
+            color: #64748b;
+            cursor: default;
+        }
+        
+        select.correct-disabled {
             background-color: #e8f8f0;
             border-color: #2ecc71;
             color: #2ecc71;
-            cursor: default;
+        }
+
+        /* Текст із правильною відповіддю при помилці */
+        .correct-answer-msg {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #e74c3c;
+            margin-bottom: 1.5rem;
+            display: none;
+            text-align: center;
         }
 
         .action-btn {
@@ -209,30 +253,33 @@
         }
         
         .finish-screen {
-            font-size: 3.5rem;
+            font-size: 3rem;
             font-weight: 900;
             color: #2ecc71;
             text-align: center;
             margin-top: 20vh;
-            line-height: 1.4;
         }
     </style>
 </head>
 <body>
 
-    <!-- Контейнер для 10 зірочок -->
-    <div id="star-container"></div>
+    <!-- Зірочки прогресу -->
+    <div class="stars-container" id="stars-container"></div>
 
-    <div class="game-container" id="game-container">
-        <!-- Рамка, що виділяє однакову кількість -->
+    <div class="cards-area" id="cards-area">
         <div class="equal-highlight" id="equal-highlight"></div>
-        
         <div class="card" id="card-left">
             <div class="blocks-container" id="blocks-left"></div>
         </div>
         <div class="card" id="card-right">
             <div class="blocks-container" id="blocks-right"></div>
         </div>
+    </div>
+
+    <!-- Поля вводу "зліва" та "справа" -->
+    <div class="inputs-area">
+        <input type="text" id="left-label" class="side-input" placeholder="Де це?" autocomplete="off">
+        <input type="text" id="right-label" class="side-input" placeholder="Де це?" autocomplete="off">
     </div>
 
     <div class="answer-row" id="answer-row">
@@ -256,6 +303,9 @@
         <button class="action-btn" id="check-btn" onclick="checkAnswer()">Перевірити</button>
     </div>
 
+    <!-- Повідомлення про правильну відповідь (при помилці) -->
+    <div id="correct-answer-msg" class="correct-answer-msg"></div>
+
     <button class="action-btn" id="next-btn" onclick="initGame()">Далі ➔</button>
 
     <script>
@@ -264,41 +314,38 @@
         let isClickable = true;
         let correctNum = 0;
         let correctWord = '';
+        let focusSide = '';
         
-        // Логіка зірочок
-        let currentStars = 0;
+        let starsCount = 0;
         const maxStars = 10;
 
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
-        function renderStars() {
-            const container = document.getElementById('star-container');
+        function drawStars() {
+            const container = document.getElementById('stars-container');
             container.innerHTML = '';
             for (let i = 0; i < maxStars; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                if (i < currentStars) {
-                    star.classList.add('gold');
-                }
-                star.innerText = '⭐';
+                const star = document.createElement('span');
+                star.className = 'star ' + (i < starsCount ? 'gold' : '');
+                star.innerHTML = '★';
                 container.appendChild(star);
             }
         }
 
         function initGame() {
-            // Перевірка на завершення гри
-            if (currentStars >= maxStars) {
-                document.body.innerHTML = '<div class="finish-screen">🎉 Супер!<br>Ти зібрав усі 10 зірок! 🌟</div>';
+            if (starsCount >= maxStars) {
+                document.body.innerHTML = '<div class="finish-screen">🎉 Молодець!<br>Ти зібрав усі зірочки!</div>';
                 return;
             }
             
-            renderStars();
+            drawStars();
             isClickable = true;
             
             document.getElementById('next-btn').style.display = 'none';
             document.getElementById('check-btn').style.display = 'block';
+            document.getElementById('correct-answer-msg').style.display = 'none';
             
             const numSelect = document.getElementById('num-select');
             const wordSelect = document.getElementById('word-select');
@@ -306,6 +353,8 @@
             wordSelect.value = '?';
             numSelect.disabled = false;
             wordSelect.disabled = false;
+            numSelect.classList.remove('correct-disabled');
+            wordSelect.classList.remove('correct-disabled');
             
             const highlight = document.getElementById('equal-highlight');
             highlight.style.opacity = '0';
@@ -319,7 +368,7 @@
             drawBlocks('blocks-left', leftCount);
             drawBlocks('blocks-right', rightCount);
 
-            const focusSide = Math.random() > 0.5 ? 'Зліва' : 'Справа';
+            focusSide = Math.random() > 0.5 ? 'Зліва' : 'Справа';
             document.getElementById('side-text').innerText = `${focusSide} на`;
             
             correctNum = Math.abs(leftCount - rightCount);
@@ -351,49 +400,81 @@
         function checkAnswer() {
             if (!isClickable) return;
 
+            const leftInput = document.getElementById('left-label');
+            const rightInput = document.getElementById('right-label');
             const selectedNum = document.getElementById('num-select').value;
             const selectedWord = document.getElementById('word-select').value;
             const answerRow = document.getElementById('answer-row');
 
-            // Якщо дитина ще не обрала обидва значення
+            let isValidationPassed = true;
+
+            // Перевірка того, чи правильно введено "зліва"
+            if (!leftInput.disabled && leftInput.value.trim().toLowerCase() !== 'зліва') {
+                leftInput.classList.remove('error');
+                void leftInput.offsetWidth;
+                leftInput.classList.add('error');
+                setTimeout(() => leftInput.classList.remove('error'), 800);
+                isValidationPassed = false;
+            }
+
+            // Перевірка того, чи правильно введено "справа"
+            if (!rightInput.disabled && rightInput.value.trim().toLowerCase() !== 'справа') {
+                rightInput.classList.remove('error');
+                void rightInput.offsetWidth;
+                rightInput.classList.add('error');
+                setTimeout(() => rightInput.classList.remove('error'), 800);
+                isValidationPassed = false;
+            }
+
+            // Перевірка того, чи вибрані значення у списках
             if (selectedNum === '?' || selectedWord === '?') {
-                isClickable = false; // Блокуємо на час анімації
                 answerRow.classList.remove('shake', 'incorrect');
                 void answerRow.offsetWidth;
                 answerRow.classList.add('shake', 'incorrect');
-                setTimeout(() => {
-                    answerRow.classList.remove('incorrect');
-                    isClickable = true;
-                }, 800);
-                return;
+                setTimeout(() => answerRow.classList.remove('incorrect'), 800);
+                isValidationPassed = false;
             }
 
-            if (parseInt(selectedNum) === correctNum && selectedWord === correctWord) {
-                // Правильна відповідь
-                currentStars++;
-                renderStars();
+            // Якщо є порожні або неправильно підписані поля — чекаємо виправлення
+            if (!isValidationPassed) return;
 
-                document.getElementById('num-select').disabled = true;
-                document.getElementById('word-select').disabled = true;
+            // Блокуємо поля підпису (вони правильні і мають зберегтися назавжди)
+            leftInput.disabled = true;
+            rightInput.disabled = true;
+
+            const numSelectEl = document.getElementById('num-select');
+            const wordSelectEl = document.getElementById('word-select');
+
+            // Основна перевірка відповіді
+            if (parseInt(selectedNum) === correctNum && selectedWord === correctWord) {
+                // ПРАВИЛЬНО
+                numSelectEl.disabled = true;
+                wordSelectEl.disabled = true;
+                numSelectEl.classList.add('correct-disabled');
+                wordSelectEl.classList.add('correct-disabled');
+                
+                starsCount++;
+                drawStars();
                 
                 document.getElementById('check-btn').style.display = 'none';
                 document.getElementById('next-btn').style.display = 'block';
                 isClickable = false;
             } else {
-                // Неправильна відповідь
-                isClickable = false; // Блокуємо, щоб не втрачати зірки через множинні кліки під час анімації
+                // ПОМИЛКА
+                numSelectEl.disabled = true;
+                wordSelectEl.disabled = true;
                 
-                currentStars = Math.max(0, currentStars - 1);
-                renderStars();
+                starsCount = Math.max(0, starsCount - 1);
+                drawStars();
+                
+                // Показуємо правильну відповідь
+                const msgEl = document.getElementById('correct-answer-msg');
+                msgEl.innerText = `Правильна відповідь: ${focusSide} на ${correctNum} ${correctWord}`;
+                msgEl.style.display = 'block';
 
-                answerRow.classList.remove('shake', 'incorrect');
-                void answerRow.offsetWidth;
-                answerRow.classList.add('shake', 'incorrect');
-                
-                setTimeout(() => {
-                    answerRow.classList.remove('incorrect');
-                    isClickable = true;
-                }, 800);
+                document.getElementById('check-btn').style.display = 'none';
+                document.getElementById('next-btn').style.display = 'block';
+                isClickable = false;
             }
         }
 
