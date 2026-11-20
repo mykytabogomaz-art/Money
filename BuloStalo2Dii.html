@@ -1,0 +1,734 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Було і стало: задачі на 2 дії</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&family=Unbounded:wght@500;600;700&display=swap">
+<style>
+/* Макет: одна колонка. Історія зверху, під нею ряд предметів, які можна додавати й прибирати,
+   далі питання зі списком і кнопка «Перевірити». Усі предмети стоять в одному ряду. */
+:root {
+  --bg: #EDF2FB;
+  --surface: #FFFFFF;
+  --surface-2: #F1F5FC;
+  --ink: #1B2547;
+  --muted: #55608A;
+  --line: #D3DCEE;
+  --accent: #3A57D6;
+  --accent-ink: #FFFFFF;
+  --more: #0C8A5E;
+  --more-soft: #DDF5EA;
+  --on-more: #FFFFFF;
+  --less: #C73E25;
+  --less-soft: #FDE6E0;
+  --on-less: #FFFFFF;
+  --sun: #FFBE2E;
+  --warn-soft: #FFF1D6;
+  --warn-line: #D99100;
+  --font-display: 'Unbounded', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-emoji: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1530;
+    --surface: #17214A;
+    --surface-2: #1F2B5E;
+    --ink: #EEF1FF;
+    --muted: #A5B0D8;
+    --line: #2E3B74;
+    --accent: #7C94FF;
+    --accent-ink: #0E1530;
+    --more: #3DDC9E;
+    --more-soft: #0F3B34;
+    --on-more: #0E1530;
+    --less: #FF8A70;
+    --less-soft: #4A2330;
+    --on-less: #0E1530;
+    --sun: #FFC94D;
+    --warn-soft: #4A3B17;
+    --warn-line: #FFC94D;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1530;
+  --surface: #17214A;
+  --surface-2: #1F2B5E;
+  --ink: #EEF1FF;
+  --muted: #A5B0D8;
+  --line: #2E3B74;
+  --accent: #7C94FF;
+  --accent-ink: #0E1530;
+  --more: #3DDC9E;
+  --more-soft: #0F3B34;
+  --on-more: #0E1530;
+  --less: #FF8A70;
+  --less-soft: #4A2330;
+  --on-less: #0E1530;
+  --sun: #FFC94D;
+  --warn-soft: #4A3B17;
+  --warn-line: #FFC94D;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.4;
+  padding-inline: 16px;
+  padding-block: 18px 24px;
+  -webkit-tap-highlight-color: transparent;
+}
+button, select { font-family: inherit; touch-action: manipulation; }
+button:focus-visible, select:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+.app { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+
+/* Шапка і прогрес */
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px 16px; flex-wrap: wrap; }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
+.stepcount { color: var(--muted); font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
+.progress { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.seg { height: 8px; border-radius: 4px; background: var(--line); transition: background .25s; }
+.seg.done { background: var(--accent); }
+.seg.current { background: var(--sun); }
+
+.game { --cols: 10; display: flex; flex-direction: column; gap: 12px; }
+
+/* Історія */
+.prompt {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 6;
+  background: var(--surface); border: 2px solid var(--line); border-radius: 18px;
+  padding: 14px 16px;
+  box-shadow: 0 6px 14px -6px rgba(14, 21, 48, .25);
+}
+.prompt-text { margin: 0; min-width: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(18px, 5.4vw, 24px); line-height: 1.3; text-wrap: balance; }
+.prompt-text b { color: var(--accent); font-weight: 700; }
+.part { border-radius: 8px; padding: 1px 3px; margin: 0 -3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; transition: background .2s, box-shadow .2s; }
+.part.hl { background: var(--warn-soft); box-shadow: inset 0 -3px 0 var(--sun); }
+
+/* Панелі */
+.panel { background: var(--surface); border: 2px solid var(--line); border-radius: 20px; padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel-head { display: flex; align-items: center; justify-content: flex-end; gap: 12px; min-height: 46px; }
+.readout { text-align: center; line-height: 1.1; min-width: 56px; }
+.num { display: block; font-family: var(--font-display); font-weight: 700; font-size: 26px; font-variant-numeric: tabular-nums; }
+.stepper { display: flex; align-items: center; gap: 8px; }
+.step-btn { width: 46px; height: 46px; border-radius: 50%; border: 0; padding: 0; font-size: 28px; font-weight: 800; line-height: 1; cursor: pointer; display: grid; place-items: center; transition: transform .1s, opacity .15s; }
+.step-btn:active:not(:disabled) { transform: scale(.92); }
+.step-btn.minus { background: var(--less); color: var(--on-less); }
+.step-btn.plus { background: var(--more); color: var(--on-more); }
+.step-btn:disabled { opacity: .3; cursor: not-allowed; }
+.reset-btn { margin-right: auto; width: 46px; height: 46px; border-radius: 50%; padding: 0; cursor: pointer; display: grid; place-items: center; background: var(--surface-2); color: var(--muted); border: 2px solid var(--line); transition: transform .1s, opacity .15s, color .15s; }
+.reset-btn svg { width: 24px; height: 24px; }
+.reset-btn:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+.reset-btn:active:not(:disabled) { transform: scale(.92) rotate(-30deg); }
+.reset-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+.grid { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 3px; container-type: inline-size; }
+.cell {
+  aspect-ratio: 1; display: grid; place-items: center; padding: 0; overflow: hidden;
+  border: 1.5px solid transparent; border-radius: 22%; background: var(--surface-2);
+  font-family: var(--font-emoji); font-size: min(34px, calc(64cqi / var(--cols))); line-height: 1;
+  color: var(--ink);
+}
+.item { cursor: pointer; transition: transform .12s, background .2s, border-color .2s, opacity .18s; }
+.item:hover:not(:disabled) { transform: scale(1.06); }
+.item:disabled { cursor: default; }
+.item.added { background: var(--more-soft); border-color: var(--more); border-width: 2px; }
+.item.enter { animation: pop .3s ease-out; }
+.item.leaving { transform: scale(.2); opacity: 0; pointer-events: none; }
+.ghost { background: transparent; border: 2px dashed var(--less); transition: transform .18s, opacity .18s; }
+.ghost.leaving { transform: scale(.2); opacity: 0; }
+.ghost span { opacity: .28; }
+.cell svg { display: block; width: 1em; height: 1em; }
+.grid.locked .item { cursor: default; }
+@keyframes pop { 0% { transform: scale(.2); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+
+.panel.shake { animation: shake .4s; }
+@keyframes shake { 0%, 100% { translate: 0; } 20% { translate: -8px; } 40% { translate: 8px; } 60% { translate: -5px; } 80% { translate: 5px; } }
+
+/* Питання зі списком */
+.ask { gap: 12px; }
+.ask-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.ask-text { font-family: var(--font-display); font-weight: 600; font-size: clamp(18px, 5.4vw, 24px); line-height: 1.3; }
+.pick { position: relative; flex: 1 1 170px; min-width: 0; }
+.pick::after {
+  content: ''; position: absolute; right: 18px; top: 50%; width: 9px; height: 9px;
+  border-right: 3px solid var(--muted); border-bottom: 3px solid var(--muted);
+  transform: translateY(-70%) rotate(45deg); pointer-events: none;
+}
+.pick-select {
+  width: 100%; min-width: 0; appearance: none; -webkit-appearance: none; cursor: pointer;
+  padding: 12px 44px 12px 14px;
+  font-family: var(--font-display); font-weight: 600; font-size: 20px;
+  border: 2px solid var(--line); border-radius: 14px; background: var(--surface-2); color: var(--ink);
+}
+.pick-select.bad { border-color: var(--warn-line); }
+.pick-select.done { border-color: var(--more); background: var(--more-soft); opacity: 1; cursor: default; }
+.pick-select:disabled { opacity: 1; -webkit-text-fill-color: currentColor; }
+#askPanel { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; }
+.ask-title { grid-column: 1 / -1; margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 18px; color: var(--muted); }
+.sol-row { display: contents; }
+#sol-answer { grid-column: 1 / -1; margin-top: -4px; }
+label[for="sol-answer"] { grid-column: 1 / -1; }
+.sol-label { font-family: var(--font-display); font-weight: 600; font-size: clamp(18px, 5.4vw, 22px); min-width: 2.2em; }
+.sol-input {
+  width: 100%; min-width: 0; padding: 12px 14px;
+  font-family: var(--font-display); font-weight: 600; font-size: 22px; letter-spacing: .03em;
+  font-variant-numeric: tabular-nums;
+  border: 2px solid var(--line); border-radius: 14px; background: var(--surface-2); color: var(--ink);
+}
+.sol-input:focus { outline: 3px solid var(--accent); outline-offset: 2px; }
+.sol-input.bad { border-color: var(--warn-line); }
+.sol-input.done { border-color: var(--more); background: var(--more-soft); }
+.sol-input:disabled { opacity: 1; -webkit-text-fill-color: currentColor; }
+
+/* Нижня панель: відгук і головна кнопка */
+.dock {
+  position: sticky; bottom: 0; z-index: 6;
+  display: flex; flex-direction: column; gap: 8px;
+  padding-block: 10px calc(6px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg); box-shadow: 0 -12px 14px 0 var(--bg);
+}
+.feedback { position: relative; overflow: hidden; border: 2px solid; border-radius: 16px; padding: 10px 14px; }
+.feedback.ok { background: var(--more-soft); border-color: var(--more); }
+.feedback.try { background: var(--warn-soft); border-color: var(--warn-line); }
+.fb-title { font-family: var(--font-display); font-weight: 600; font-size: 15px; }
+.fb-text { margin: 2px 0 0; font-size: 15px; font-weight: 700; }
+.conf { position: absolute; top: -8px; width: 8px; height: 12px; border-radius: 2px; pointer-events: none; animation: fall 1.1s ease-in forwards; }
+@keyframes fall { from { transform: translate(0, 0) rotate(0); opacity: 1; } to { transform: translate(var(--dx), 130px) rotate(var(--rot)); opacity: 0; } }
+
+.main {
+  width: 100%; border: 0; border-radius: 16px; padding: 16px 20px; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink);
+  font-family: var(--font-display); font-weight: 600; font-size: 16px; letter-spacing: .02em;
+  transition: filter .15s, transform .1s;
+}
+.main:hover { filter: brightness(1.08); }
+.main:active { transform: translateY(1px); }
+.main.next { background: var(--more); color: var(--on-more); }
+
+/* Результат */
+.result { background: var(--surface); border: 2px solid var(--line); border-radius: 22px; padding: 22px 18px; display: flex; flex-direction: column; gap: 12px; }
+.result h2 { margin: 0; font-family: var(--font-display); font-size: 20px; letter-spacing: -0.01em; color: var(--ink); font-weight: 700; text-wrap: balance; }
+.score { font-family: var(--font-display); font-weight: 700; font-size: clamp(44px, 14vw, 64px); line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+.score-sub { margin: 0; color: var(--muted); font-weight: 800; }
+.stars { display: flex; flex-wrap: wrap; gap: 2px; }
+.star { font-size: 24px; line-height: 1; color: var(--line); }
+.star.on { color: var(--sun); }
+.result-msg { margin: 0; font-size: 17px; font-weight: 700; text-wrap: balance; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<main class="app">
+  <header class="top">
+    <h1>Було і стало: 2 дії</h1>
+    <div class="stepcount" id="stepLabel">Завдання 1 з 5</div>
+  </header>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+
+  <div class="game" id="game">
+    <div class="prompt" id="prompt">
+      <p class="prompt-text" id="promptText"></p>
+    </div>
+
+    <section class="panel" id="minePanel" aria-label="Група предметів">
+      <div class="panel-head">
+        <button type="button" class="reset-btn" id="btnReset" aria-label="Почати спочатку" title="Почати спочатку">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M4 3.5v5h5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="stepper">
+          <button type="button" class="step-btn minus" id="btnMinus" aria-label="Прибрати один предмет">−</button>
+          <div class="readout"><span class="num" id="mineNum">0</span></div>
+          <button type="button" class="step-btn plus" id="btnPlus" aria-label="Додати один предмет">+</button>
+        </div>
+      </div>
+      <div class="grid" id="mineGrid"></div>
+    </section>
+
+    <section class="panel ask" id="askPanel"></section>
+
+    <div class="dock">
+      <div class="feedback" id="feedback" role="status" aria-live="polite" hidden>
+        <div class="fb-title" id="fbTitle"></div>
+        <p class="fb-text" id="fbText"></p>
+      </div>
+      <button type="button" class="main" id="btnMain">Перевірити</button>
+    </div>
+  </div>
+
+  <section class="result" id="result" hidden>
+    <h2>Усі 5 задач розв’язано!</h2>
+    <div class="score" id="score">0 з 5</div>
+    <p class="score-sub">правильно з першої спроби</p>
+    <div class="stars" id="stars" aria-hidden="true"></div>
+    <p class="result-msg" id="resultMsg"></p>
+    <button type="button" class="main" id="btnAgain">Грати ще раз</button>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var cols = 10; // скільки предметів в одному ряду
+  var MAX_ITEMS = 20; // найбільше предметів (два ряди)
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Одна вишенька (емодзі 🍒 малює дві), колір однаковий у світлій і темній темі
+  var CHERRY = '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M14 14C14 8 18 4 25 3" fill="none" stroke="#3B8F3B" stroke-width="2.2" stroke-linecap="round"/><path d="M25 3C23 8 18 9 15.5 7.5C17 4.5 20.5 2.5 25 3Z" fill="#4CAF50"/><circle cx="14" cy="21" r="8.5" fill="#D81F3A"/><circle cx="11" cy="18" r="2.2" fill="#fff" opacity=".55"/></svg>';
+  // text — умова; q — питання; forms (і alt) — форми слова для 1, 2–4, 5+ у відповіді;
+  // n — скільки було спочатку; steps — дві дії: dir (more/less) і x (на скільки)
+  var TASKS = [
+    { icon: '🧑', text: 'В автобусі їхало 5 пасажирів. На зупинці зайшли 4 пасажири, а вийшли 3.', q: 'Скільки пасажирів в автобусі?', who: 'Пасажирів', forms: ['пасажир', 'пасажири', 'пасажирів'], alt: ['людина', 'людини', 'людей'], n: 5, steps: [{ dir: 'more', x: 4 }, { dir: 'less', x: 3 }] },
+    { icon: '🍎', text: 'На тарілці лежало 6 яблук. Мама поклала ще 3 яблука, а потім діти з’їли 5.', q: 'Скільки яблук на тарілці?', who: 'Яблук', forms: ['яблуко', 'яблука', 'яблук'], n: 6, steps: [{ dir: 'more', x: 3 }, { dir: 'less', x: 5 }] },
+    { icon: '🧑', text: 'У трамваї їхало 9 пасажирів. На зупинці вийшли 5 пасажирів, а зайшли 2.', q: 'Скільки пасажирів у трамваї?', who: 'Пасажирів', forms: ['пасажир', 'пасажири', 'пасажирів'], alt: ['людина', 'людини', 'людей'], n: 9, steps: [{ dir: 'less', x: 5 }, { dir: 'more', x: 2 }] },
+    { icon: '🍐', text: 'На тарілці лежало 7 груш. Діти з’їли 4 груші, а потім мама поклала ще 3.', q: 'Скільки груш на тарілці?', who: 'Груш', forms: ['груша', 'груші', 'груш'], n: 7, steps: [{ dir: 'less', x: 4 }, { dir: 'more', x: 3 }] },
+    { icon: '🍌', text: 'На тарілці лежало 4 банани. Бабуся поклала ще 5 бананів, а потім онуки з’їли 6.', q: 'Скільки бананів на тарілці?', who: 'Бананів', forms: ['банан', 'банани', 'бананів'], n: 4, steps: [{ dir: 'more', x: 5 }, { dir: 'less', x: 6 }] }
+  ];
+  var PRAISE = ['Молодець!', 'Чудово!', 'Правильно!', 'Так тримати!', 'Супер!'];
+
+  function $(id) { return document.getElementById(id); }
+  var el = {
+    stepLabel: $('stepLabel'), progress: $('progress'), game: $('game'),
+    promptText: $('promptText'),
+    minePanel: $('minePanel'), mineGrid: $('mineGrid'), mineNum: $('mineNum'),
+    btnMinus: $('btnMinus'), btnPlus: $('btnPlus'), btnReset: $('btnReset'),
+    askPanel: $('askPanel'),
+    feedback: $('feedback'), fbTitle: $('fbTitle'), fbText: $('fbText'),
+    btnMain: $('btnMain'), result: $('result'), score: $('score'), stars: $('stars'),
+    resultMsg: $('resultMsg'), btnAgain: $('btnAgain')
+  };
+
+  var idx = 0, attempts = 0, locked = false, results = [], items = [], cur = TASKS[0], picks = [];
+  var ghosts = [], reachedMid = false, step2Started = false;
+
+  var segs = [];
+  TASKS.forEach(function () {
+    var s = document.createElement('span');
+    s.className = 'seg';
+    el.progress.appendChild(s);
+    segs.push(s);
+  });
+
+  function apply(v, st) { return st.dir === 'more' ? v + st.x : v - st.x; }
+  function target(t) { return t.steps.reduce(apply, t.n); }
+  function peak(t) { var v = t.n, m = t.n; t.steps.forEach(function (st) { v = apply(v, st); m = Math.max(m, v); }); return m; }
+  function icon(cls, tag) {
+    var c = document.createElement(tag || 'div');
+    c.className = cls;
+    var s = document.createElement('span');
+    if (cur.svg) s.innerHTML = cur.svg; else s.textContent = cur.icon;
+    s.setAttribute('aria-hidden', 'true');
+    c.appendChild(s);
+    return c;
+  }
+
+  // Предмет на панелі. step — у якій дії його додали (0 — був на початку).
+  function makeItem(animate, step) {
+    var b = icon('cell item' + (step ? ' added' : '') + (animate && !reduce ? ' enter' : ''), 'button');
+    b.type = 'button';
+    b.dataset.step = step || 0;
+    b.setAttribute('aria-label', 'Прибрати один предмет');
+    b.addEventListener('click', function () { removeNode(b); });
+    b.addEventListener('animationend', function () { b.classList.remove('enter'); });
+    return b;
+  }
+
+  // Прибраний предмет лишається на своєму місці в пунктирній рамці
+  function toGhost(b, step) {
+    if (b.dataset.revived) { b.dataset.step = b.dataset.prevStep; delete b.dataset.revived; delete b.dataset.prevStep; }
+    b.classList.remove('item', 'added', 'enter');
+    b.classList.add('ghost');
+    b.disabled = true;
+    b.setAttribute('aria-hidden', 'true');
+    b.dataset.ghostStep = step;
+    ghosts.push(b);
+  }
+  // asStep — повертаємо як «нового» предмета цієї дії (зелений)
+  function fromGhost(b, asStep) {
+    ghosts.splice(ghosts.indexOf(b), 1);
+    if (asStep) { b.dataset.prevStep = b.dataset.step; b.dataset.step = asStep; b.dataset.revived = '1'; }
+    b.classList.remove('ghost');
+    b.classList.add('item');
+    if (+b.dataset.step) b.classList.add('added');
+    b.disabled = false;
+    b.removeAttribute('aria-hidden');
+    delete b.dataset.ghostStep;
+    if (!reduce) { b.classList.add('enter'); }
+    var pos = 0;
+    for (var node = b.previousElementSibling; node; node = node.previousElementSibling)
+      if (items.indexOf(node) >= 0) pos++;
+    items.splice(pos, 0, b);
+  }
+
+  // Яка дія зараз виконується на панелі: 1 — поки не дійшли до результату першої дії, далі 2
+  function curStep() { return reachedMid ? 2 : 1; }
+
+  // Коли дитина починає другу дію, пунктирні предмети з першої дії зникають
+  function startStep2() {
+    if (curStep() !== 2 || step2Started) return;
+    step2Started = true;
+    ghosts.slice().forEach(function (g) {
+      ghosts.splice(ghosts.indexOf(g), 1);
+      if (reduce) { g.remove(); }
+      else { g.classList.add('leaving'); setTimeout(function () { g.remove(); }, 180); }
+    });
+  }
+
+  function layout() {
+    var n = items.length;
+    if (n === apply(cur.n, cur.steps[0])) reachedMid = true;
+    el.mineNum.textContent = n;
+    el.btnMinus.disabled = locked || n === 0;
+    el.btnReset.disabled = locked;
+    el.btnPlus.disabled = locked || n >= MAX_ITEMS;
+  }
+
+  // Коли на панелі вже виконана перша дія, а в полі «Перша дія» ще нічого не записано,
+  // другу дію виконувати не можна: спершу треба записати першу.
+  var blockShown = false;
+  function mayChange() {
+    var mid = apply(cur.n, cur.steps[0]);
+    var inp = picks[0] && picks[0].inp;
+    if (!inp || items.length !== mid) return true;
+    var v = inp.value.trim();
+    if (v && parseAction(v)) return true;
+    showFeedback('try', 'Спочатку запиши першу дію',
+      v ? 'Допиши першу дію до кінця, а потім виконуй другу.'
+        : 'Перша дія вже виконана. Запиши її в поле «Перша дія», а потім виконуй другу.');
+    blockShown = true;
+    shake(el.minePanel);
+    inp.focus();
+    return false;
+  }
+
+  // «+»: якщо зараз дія «менше», це виправлення — повертаємо останній прибраний предмет;
+  // інакше додаємо новий (зелений) у кінець.
+  function addOne() {
+    if (locked || items.length >= MAX_ITEMS) return;
+    if (!mayChange()) return;
+    startStep2();
+    var step = curStep();
+    var last = ghosts[ghosts.length - 1];
+    var firstGhost = el.mineGrid.querySelector('.ghost:not(.leaving)');
+    if (cur.steps[step - 1].dir === 'less' && last && +last.dataset.ghostStep === step) {
+      // виправлення в дії «менше»: повертаємо щойно прибраний предмет
+      fromGhost(last);
+    } else if (firstGhost) {
+      // дія «більше»: нові предмети спершу займають порожні пунктирні місця
+      fromGhost(firstGhost, step);
+    } else {
+      var b = makeItem(true, step);
+      el.mineGrid.appendChild(b);
+      items.push(b);
+    }
+    layout();
+  }
+
+  // «−» або натискання на предмет: якщо зараз дія «більше» і предмет додано в цій дії
+  // в кінець ряду, це виправлення — предмет зникає зовсім; інакше він стає пунктирним.
+  function removeNode(b) {
+    if (locked) return;
+    var i = items.indexOf(b);
+    if (i < 0) return;
+    if (!mayChange()) return;
+    startStep2();
+    var step = curStep();
+    items.splice(i, 1);
+    if (cur.steps[step - 1].dir === 'more' && +b.dataset.step === step && !b.dataset.revived) {
+      b.disabled = true;
+      if (reduce) { b.remove(); }
+      else { b.classList.add('leaving'); setTimeout(function () { b.remove(); }, 180); }
+    } else {
+      toGhost(b, step);
+    }
+    layout();
+  }
+  function removeLast() {
+    if (items.length) removeNode(items[items.length - 1]);
+  }
+
+  function setMain(state) {
+    el.btnMain.dataset.state = state;
+    el.btnMain.textContent = state === 'check' ? 'Перевірити' : state === 'next' ? 'Далі →' : 'Подивитись результат';
+    el.btnMain.classList.toggle('next', state !== 'check');
+  }
+  function hideFeedback() { el.feedback.hidden = true; blockShown = false; }
+  function showFeedback(kind, title, text) {
+    blockShown = false;
+    var f = el.feedback;
+    f.hidden = false;
+    f.className = 'feedback ' + kind;
+    el.fbTitle.textContent = title;
+    el.fbText.textContent = text;
+    el.fbText.hidden = !text;
+  }
+  function burst() {
+    if (reduce) return;
+    var colors = ['var(--sun)', 'var(--accent)', 'var(--more)', 'var(--less)'];
+    for (var i = 0; i < 18; i++) {
+      var p = document.createElement('i');
+      p.className = 'conf';
+      p.style.left = (Math.random() * 100) + '%';
+      p.style.background = colors[i % 4];
+      p.style.animationDelay = (Math.random() * 0.2) + 's';
+      p.style.setProperty('--dx', (Math.random() * 60 - 30) + 'px');
+      p.style.setProperty('--rot', (Math.random() * 540 - 270) + 'deg');
+      el.feedback.appendChild(p);
+      (function (q) { setTimeout(function () { q.remove(); }, 1500); })(p);
+    }
+  }
+  function shake(node) {
+    if (reduce) return;
+    node.classList.remove('shake');
+    void node.offsetWidth;
+    node.classList.add('shake');
+  }
+
+  // Розв’язок: 1) перша дія, 2) друга дія, Відповідь
+  function addRow(label, kind) {
+    var row = document.createElement('div');
+    row.className = 'sol-row';
+    var id = 'sol-' + kind;
+    var lab = document.createElement('label');
+    lab.className = 'sol-label';
+    lab.htmlFor = id;
+    lab.textContent = label;
+    var inp = document.createElement('input');
+    inp.type = 'text';
+    inp.id = id;
+    inp.className = 'sol-input';
+    inp.autocomplete = 'off';
+    inp.spellcheck = false;
+    inp.setAttribute('autocapitalize', 'off');
+    inp.setAttribute('autocorrect', 'off');
+    if (kind === 'answer') inp.setAttribute('autocapitalize', 'sentences');
+    inp.addEventListener('input', function () {
+      inp.classList.remove('bad');
+      if (blockShown && kind === 'step1') { blockShown = false; hideFeedback(); }
+    });
+    inp.addEventListener('focus', function () { highlight(kind); });
+    inp.addEventListener('blur', function () { highlight(null); });
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); el.btnMain.click(); } });
+    row.appendChild(lab);
+    row.appendChild(inp);
+    el.askPanel.appendChild(row);
+    picks.push({ kind: kind, inp: inp });
+  }
+
+  // Підсвічує частину умови, до якої належить поле
+  function highlight(kind) {
+    el.promptText.querySelectorAll('.part').forEach(function (p) {
+      p.classList.toggle('hl', p.dataset.part === kind);
+    });
+  }
+
+  function buildAsk() {
+    el.askPanel.replaceChildren();
+    picks = [];
+    var t = document.createElement('p');
+    t.className = 'ask-title';
+    t.textContent = 'Розв’язок';
+    el.askPanel.appendChild(t);
+    addRow('Перша дія:', 'step1');
+    addRow('Друга дія:', 'step2');
+    addRow('Відповідь:', 'answer');
+  }
+
+  // «4 + 3 = 7», «4+3=7», «7 – 2 = 5» → { a, op, b, r }
+  function parseAction(str) {
+    var m = str.replace(/[−–—]/g, '-').replace(/\s+/g, '').match(/^(\d+)([+-])(\d+)=(\d+)$/);
+    return m ? { a: +m[1], op: m[2], b: +m[3], r: +m[4] } : null;
+  }
+  // Відповідь — повне речення, наприклад «В автобусі 6 людей.»
+  var NUM_WORDS = {
+    'один': 1, 'одна': 1, 'одне': 1, 'два': 2, 'дві': 2, 'три': 3, 'чотири': 4, 'пять': 5,
+    'шість': 6, 'сім': 7, 'вісім': 8, 'девять': 9, 'десять': 10, 'одинадцять': 11,
+    'дванадцять': 12, 'тринадцять': 13, 'чотирнадцять': 14, 'пятнадцять': 15,
+    'шістнадцять': 16, 'сімнадцять': 17, 'вісімнадцять': 18, 'девятнадцять': 19, 'двадцять': 20
+  };
+
+  function formFor(forms, n) {
+    var d = n % 10, dd = n % 100;
+    if (d === 1 && dd !== 11) return forms[0];
+    if (d >= 2 && d <= 4 && (dd < 12 || dd > 14)) return forms[1];
+    return forms[2];
+  }
+
+  // Повертає '' або назву помилки
+  function checkSentence(str, t) {
+    var text = str.trim();
+    var words = text.toLowerCase().replace(/[’'ʼ`]/g, '').match(/[а-щьюяґєії]+|\d+/g) || [];
+    var nums = [];
+    words.forEach(function (w) {
+      if (/^\d+$/.test(w)) nums.push(+w);
+      else if (NUM_WORDS[w]) nums.push(NUM_WORDS[w]);
+    });
+    if (words.length < 3) return 'sentence';
+    if (nums.length !== 1 || nums[0] !== target(t)) return 'number';
+    var nouns = [formFor(t.forms, target(t))];
+    if (t.alt) nouns.push(formFor(t.alt, target(t)));
+    if (!nouns.some(function (w) { return words.indexOf(w) >= 0; })) return 'noun';
+    if (text.charAt(0) !== text.charAt(0).toUpperCase() || !/[А-ЩЬЮЯҐЄІЇA-Z0-9]/.test(text.charAt(0))) return 'capital';
+    if (!/\.$/.test(text)) return 'dot';
+    return '';
+  }
+
+  // Перевіряє одну дію: from — скільки було перед цією дією, st — що сталося.
+  // Повертає '' або назву помилки.
+  function checkAction(p, from, st) {
+    if (!p) return 'format';
+    var to = apply(from, st);
+    var okExpr = st.dir === 'more'
+      ? p.op === '+' && ((p.a === from && p.b === st.x) || (p.a === st.x && p.b === from))
+      : p.op === '-' && p.a === from && p.b === st.x;
+    if (!okExpr) return 'expr';
+    if (p.r !== to) return 'calc';
+    return '';
+  }
+
+  // Панель у початковому стані: лише предмети, які були спочатку
+  function fillPanel() {
+    items = []; ghosts = []; reachedMid = false; step2Started = false;
+    el.mineGrid.replaceChildren();
+    for (var i = 0; i < cur.n; i++) {
+      var b = makeItem(false);
+      el.mineGrid.appendChild(b);
+      items.push(b);
+    }
+  }
+  function resetPanel() {
+    if (locked) return;
+    fillPanel();
+    if (blockShown) hideFeedback();
+    layout();
+  }
+
+  function showTask() {
+    cur = TASKS[idx];
+    attempts = 0; locked = false;
+    cols = 10;
+    el.game.style.setProperty('--cols', cols);
+    el.mineGrid.classList.remove('locked');
+    fillPanel();
+    // Умова ділиться на частини: перша дія (до «, а …»), друга дія, питання
+    var cut = cur.text.lastIndexOf(', а ') + 1;
+    var parts = [
+      ['step1', cur.text.slice(0, cut)],
+      ['step2', cur.text.slice(cut + 1)],
+      ['answer', cur.q]
+    ];
+    el.promptText.innerHTML = parts.map(function (p) {
+      return '<span class="part" data-part="' + p[0] + '">' + p[1].replace(/(\d+)/g, '<b>$1</b>') + '</span>';
+    }).join(' ');
+    buildAsk();
+    el.stepLabel.textContent = 'Завдання ' + (idx + 1) + ' з ' + TASKS.length;
+    segs.forEach(function (s, i) { s.className = 'seg' + (i < idx ? ' done' : i === idx ? ' current' : ''); });
+    hideFeedback();
+    setMain('check');
+    layout();
+  }
+
+  var HINTS = {
+    format: 'Запиши дію так: число, знак, число, = і результат. Наприклад: 5 + 2 = 7',
+    expr1: 'Подивись ще раз на першу дію: предметів стало більше чи менше? На скільки?',
+    expr2: 'Друга дія починається з того, скільки стало після першої дії.',
+    calc: 'Дія записана правильно, але перевір результат.',
+    sentence: 'Відповідь пишемо повним реченням. Наприклад: «На столі 5 кульок.»',
+    number: 'Перевір число у відповіді: скільки вийшло після двох дій?',
+    noun: 'Після числа напиши, кого або чого, і перевір закінчення слова.',
+    capital: 'Речення починається з великої літери.',
+    dot: 'У кінці речення постав крапку.',
+    empty: 'Заповни всі три рядки.'
+  };
+
+  function check() {
+    if (locked) return;
+    var empty = picks.filter(function (p) { return !p.inp.value.trim(); });
+    if (empty.length) {
+      showFeedback('try', 'Ще не все', HINTS.empty);
+      empty[0].inp.focus();
+      return;
+    }
+    attempts++;
+    var s1 = cur.steps[0], s2 = cur.steps[1];
+    var mid = apply(cur.n, s1);
+    var e1 = checkAction(parseAction(picks[0].inp.value), cur.n, s1);
+    var e2 = checkAction(parseAction(picks[1].inp.value), mid, s2);
+    var e3 = checkSentence(picks[2].inp.value, cur);
+    var errs = [e1, e2, e3];
+    if (e1 || e2 || e3) {
+      errs.forEach(function (e, i) { if (e) picks[i].inp.classList.add('bad'); });
+      var first = errs.findIndex(function (e) { return e; });
+      var e = errs[first];
+      var hint = e === 'expr' ? HINTS['expr' + (first + 1)] : HINTS[e];
+      var where = first === 0 ? 'Перша дія. ' : first === 1 ? 'Друга дія. ' : '';
+      showFeedback('try', 'Спробуй ще раз', (e === 'format' || e === 'calc' ? where : '') + hint);
+      shake(el.askPanel);
+      picks[first].inp.focus();
+      return;
+    }
+    locked = true;
+    results[idx] = attempts === 1;
+    el.mineGrid.classList.add('locked');
+    items.forEach(function (b) { b.disabled = true; });
+    picks.forEach(function (p) { p.inp.disabled = true; p.inp.classList.add('done'); });
+    layout();
+    showFeedback('ok', PRAISE[Math.floor(Math.random() * PRAISE.length)], '');
+    burst();
+    setMain(idx === TASKS.length - 1 ? 'finish' : 'next');
+  }
+
+  function finish() {
+    var score = results.filter(Boolean).length;
+    segs.forEach(function (s) { s.className = 'seg done'; });
+    el.stepLabel.textContent = 'Готово!';
+    el.game.hidden = true;
+    el.result.hidden = false;
+    el.score.textContent = score + ' з ' + TASKS.length;
+    el.stars.replaceChildren();
+    results.forEach(function (r) {
+      var s = document.createElement('span');
+      s.className = 'star' + (r ? ' on' : '');
+      s.textContent = '★';
+      el.stars.appendChild(s);
+    });
+    el.resultMsg.textContent = score >= 5
+      ? 'Ти справжній чемпіон задач!'
+      : score >= 3
+        ? 'Чудовий результат! Зіграй ще раз, і буде ще краще.'
+        : 'Гарна спроба! З кожною грою стає легше.';
+    window.scrollTo({ top: 0 });
+  }
+
+  function restart() {
+    idx = 0; results = [];
+    el.result.hidden = true;
+    el.game.hidden = false;
+    showTask();
+    window.scrollTo({ top: 0 });
+  }
+
+  el.btnPlus.addEventListener('click', addOne);
+  el.btnReset.addEventListener('click', resetPanel);
+  el.btnMinus.addEventListener('click', removeLast);
+  el.btnAgain.addEventListener('click', restart);
+    el.btnMain.addEventListener('click', function () {
+    var st = el.btnMain.dataset.state;
+    if (st === 'check') check();
+    else if (st === 'next') { idx++; showTask(); window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); }
+    else finish();
+  });
+
+  showTask();
+})();
+</script>
+
+</body></html>
